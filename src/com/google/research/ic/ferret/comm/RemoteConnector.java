@@ -15,7 +15,6 @@
  *******************************************************************************/
 package com.google.research.ic.ferret.comm;
 
-import com.google.research.ic.ferret.MainFrame;
 import com.google.research.ic.ferret.test.Debug;
 
 import java.io.BufferedReader;
@@ -82,9 +81,6 @@ public class RemoteConnector implements Runnable {
           //System.err.println(line);
 
           String demoMode = "false";
-          if (MainFrame.getMainFrame() != null) {
-            demoMode = "" + MainFrame.getMainFrame().isDemoMode();
-          }
           out.println("DEMO=" + demoMode);
           out.flush();
           if (connected) {
