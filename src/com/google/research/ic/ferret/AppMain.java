@@ -24,7 +24,6 @@ import com.google.research.ic.ferret.data.SubSequence;
 import com.google.research.ic.ferret.data.attributes.AttributeManager;
 import com.google.research.ic.ferret.data.attributes.DurationAttributeHandler;
 import com.google.research.ic.ferret.data.attributes.UserNameAttributeHandler;
-import com.google.research.ic.ferret.data.ext.reflection.ReflectionLogParser;
 import com.google.research.ic.ferret.test.Debug;
 import com.google.research.ic.ferret.uiserver.UIServer;
 
@@ -141,36 +140,36 @@ public class AppMain {
 
     // extract some random queries
     
-    if (argList.contains(ARG_EXTRACT_QUERIES) && 
-        LogLoader.getLogLoader().getLogType().equals(LogLoader.REFLECTION_LOG)) {
-      
-      ArrayList<Snippet> logSnippets = SearchEngine.getSearchEngine().getLogSnippets();
-      for (int i = 0; i < 10; i++) {
-        int logID = (int) Math.floor(Math.random() * logSnippets.size());
-        int snipSize = 10 + (int) Math.floor(Math.random() * 40); // 10-50
-        Snippet logSnippet = logSnippets.get(logID);
-        int snipStart = -1;
-        if (snipSize <= logSnippet.getEvents().size()) {
-          snipStart = (int) Math.floor(Math.random() * 
-            (logSnippet.getEvents().size() - snipSize));
-        } else {
-          snipStart = 0;
-          snipSize = logSnippet.getEvents().size();
-
-        }
-        Debug.log("Creating snippet frm Log" + logID + "[" + snipStart + "-" + 
-            (snipStart + snipSize - 1) + "], Log size is " + logSnippet.getEvents().size() + 
-            ", snipSize is " + snipSize);
-
-        SubSequence subS = new SubSequence(snipStart, snipStart + snipSize - 1, logSnippet);
-        
-        Snippet sampleQuery = subS.getSubSnippet();
-        File file = new File(ReflectionLogParser.DEFAULT_LOG_DIRECTORY, "query" + i + ".db");
-        ReflectionLogParser.getParser().writeSnippet(sampleQuery, file);
-        Debug.log("Wrote snippet Log" + logID + "[" + snipStart + "-" + 
-            (snipStart + snipSize - 1) + "] to " + file.toString());
-      }
-    }
+//    if (argList.contains(ARG_EXTRACT_QUERIES) && 
+//        LogLoader.getLogLoader().getLogType().equals(LogLoader.REFLECTION_LOG)) {
+//      
+//      ArrayList<Snippet> logSnippets = SearchEngine.getSearchEngine().getLogSnippets();
+//      for (int i = 0; i < 10; i++) {
+//        int logID = (int) Math.floor(Math.random() * logSnippets.size());
+//        int snipSize = 10 + (int) Math.floor(Math.random() * 40); // 10-50
+//        Snippet logSnippet = logSnippets.get(logID);
+//        int snipStart = -1;
+//        if (snipSize <= logSnippet.getEvents().size()) {
+//          snipStart = (int) Math.floor(Math.random() * 
+//            (logSnippet.getEvents().size() - snipSize));
+//        } else {
+//          snipStart = 0;
+//          snipSize = logSnippet.getEvents().size();
+//
+//        }
+//        Debug.log("Creating snippet frm Log" + logID + "[" + snipStart + "-" + 
+//            (snipStart + snipSize - 1) + "], Log size is " + logSnippet.getEvents().size() + 
+//            ", snipSize is " + snipSize);
+//
+//        SubSequence subS = new SubSequence(snipStart, snipStart + snipSize - 1, logSnippet);
+//        
+//        Snippet sampleQuery = subS.getSubSnippet();
+//        File file = new File(ReflectionLogParser.DEFAULT_LOG_DIRECTORY, "query" + i + ".db");
+//        ReflectionLogParser.getParser().writeSnippet(sampleQuery, file);
+//        Debug.log("Wrote snippet Log" + logID + "[" + snipStart + "-" + 
+//            (snipStart + snipSize - 1) + "] to " + file.toString());
+//      }
+//    }
     Debug.log("Server initialized. Ready for action.");
   }
 }

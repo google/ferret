@@ -22,9 +22,7 @@ import com.google.research.ic.ferret.data.Event;
 import com.google.research.ic.ferret.data.Parser;
 import com.google.research.ic.ferret.data.Snippet;
 import com.google.research.ic.ferret.data.attributes.Attribute;
-import com.google.research.ic.ferret.data.ext.reflection.ReflectionEvent;
 import com.google.research.ic.ferret.test.Debug;
-import com.google.research.reflection.data.Observation;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;

@@ -33,7 +33,6 @@ import com.google.research.ic.ferret.data.attributes.CategoricalAttribute;
 import com.google.research.ic.ferret.data.attributes.DateTimeAttribute;
 import com.google.research.ic.ferret.data.attributes.NumericalAttribute;
 import com.google.research.ic.ferret.data.ext.alogger.AccessibilityLogParser;
-import com.google.research.ic.ferret.data.ext.reflection.ReflectionLogParser;
 import com.google.research.ic.ferret.test.Debug;
 
 /**
@@ -118,7 +117,7 @@ public class LogLoader {
   public Parser getParser() {
     synchronized(logType) {
       if (logType.equals(REFLECTION_LOG)) {
-        parser = ReflectionLogParser.getParser();
+        throw new IllegalArgumentException("Reflection logs not supported currently");
       } else if (logType.equals(ACCESSIBILITIY_LOG)) {
         parser = AccessibilityLogParser.getParser();
       }
