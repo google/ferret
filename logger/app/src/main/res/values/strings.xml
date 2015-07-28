@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">ALogger</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="accessibility_service_label">RideAlong UI Event Interceptor Service</string>
+    <string name="accessibility_service_description">Monitors UI events for the RideAlong Mobile UX study client service</string>
+
+</resources>
