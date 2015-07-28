@@ -14,21 +14,4 @@
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>rcore</name>
-			<type>2</type>
-			<location>/google/src/cloud/marknewman/dila/google3/research/ic/activity/reflectioncore/src</location>
-		</link>
-		<link>
-			<name>reflection-core</name>
-			<type>2</type>
-			<location>/google/src/cloud/liyang/mybrain/google3/research/ic/activity/reflectioncore/src</location>
-		</link>
-		<link>
-			<name>reflectioncore</name>
-			<type>2</type>
-			<location>/google/src/cloud/liyang/mybrain/google3/research/ic/activity/reflectioncore/src</location>
-		</link>
-	</linkedResources>
 </projectDescription>
