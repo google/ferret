@@ -23,16 +23,17 @@ import com.google.research.ic.ferret.data.DemoManager;
 import com.google.research.ic.ferret.data.Event;
 import com.google.research.ic.ferret.data.FilterSpec;
 import com.google.research.ic.ferret.data.FilteredResultSet;
+import com.google.research.ic.ferret.data.FilteredResultSet.FilteredResultSummary;
 import com.google.research.ic.ferret.data.LogLoader;
 import com.google.research.ic.ferret.data.ResultSet;
 import com.google.research.ic.ferret.data.SearchEngine;
 import com.google.research.ic.ferret.data.Snippet;
-import com.google.research.ic.ferret.data.FilteredResultSet.FilteredResultSummary;
 import com.google.research.ic.ferret.data.attributes.Attribute;
 import com.google.research.ic.ferret.data.attributes.CategoricalAttribute;
 import com.google.research.ic.ferret.data.attributes.DateTimeAttribute;
 import com.google.research.ic.ferret.data.attributes.NumericalAttribute;
 import com.google.research.ic.ferret.test.Debug;
+import com.google.research.ic.ferret.test.Shell;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -145,6 +146,8 @@ public class RESTHandler {
       ResultSet resultSet = SearchEngine.getSearchEngine().searchMatches(currentQuery).getCloseMatches();
       Debug.log("Finished searching after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
       Debug.log("There are " + resultSet.getResults().size() + " subSequences in result set");
+      Debug.log("Query is: ");
+      Shell.printEvents(currentQuery, 0, currentQuery.size());
       
       Session.getCurrentSession().setCurrentResultSet(resultSet);
       
