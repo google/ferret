@@ -14,3 +14,6 @@ Point your browser to ferret/analyzer/webui/index.html.
 Click "record" and enter an interaction sequence, then press "search." 
 
 Enjoy the results!
+
+PLEASE NOTE: 
+This is not an official Google product (experimental or otherwise), it is just code that happens to be owned by Google.
