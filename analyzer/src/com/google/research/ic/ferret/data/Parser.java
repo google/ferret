@@ -36,6 +36,7 @@ public interface Parser {
   public List<Snippet> readLogFile(String logFile);
   public List<Snippet> readDemoDirectory(String logDir);
   public Event parseEvent(String event);
+  public boolean compressSnippet(Snippet s, boolean inspectWholeSnippet);
 
   public void writeSnippet(Snippet snip, File file);
   public void writeEvent(Event evt, File file);

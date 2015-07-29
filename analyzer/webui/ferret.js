@@ -169,8 +169,10 @@ function pollForEvents() {
       if (data != null && data.status === "stopped") {
         // do nothing, just stop polling
       } else {
-        processDemoEvents(data);
-        setTimeout(pollForEvents, 500);
+	    displayDemoSnippet(data);
+	    console.log(data);
+        //processDemoEvents(data);
+        setTimeout(pollForEvents, 2500);
       }
     },
     error: function(xhr, status, error) {

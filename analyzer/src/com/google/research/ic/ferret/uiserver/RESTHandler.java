@@ -76,9 +76,11 @@ public class RESTHandler {
     if (stopped) {
       return "{ \"status\" : \"stopped\" }";
     } else {
-      List<Event> events = session.dequeueDemoEvents();
-      String response = getGson().toJson(events, ArrayList.class); // Hmmm, not totally safe b/c events is a List, not ArrayList. But I know what it really is...
-      String response2 = "{ \"numPollAttempts\" : \"" + numPollAttempts++ + "\" }";
+//    List<Event> events = session.dequeueDemoEvents();
+      Snippet q = session.getCurrentQuery();      
+      String response = getGson().toJson(q, Snippet.class); 
+      //String response = getGson().toJson(events, ArrayList.class); // Hmmm, not totally safe b/c events is a List, not ArrayList. But I know what it really is...
+      //String response2 = "{ \"numPollAttempts\" : \"" + numPollAttempts++ + "\" }";
       if (response != null && !response.equals("null")) {
         Debug.log("polled, responding " + response + " which has " + response.length());
 //        response = null;
