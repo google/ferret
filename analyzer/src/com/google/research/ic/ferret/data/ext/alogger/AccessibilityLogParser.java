@@ -247,6 +247,11 @@ public class AccessibilityLogParser implements Parser {
         //Debug.log("removed " + removed++ + " so far, snippet is currently size=" + snippet.getEvents().size());
         snippet.getEvents().remove(size - 1);
         return true;
+      } else if (prevEvent.getEventType() == AccessibilityLogEvent.TYPE_VIEW_TEXT_CHANGED ||
+    		  prevEvent.getEventType() == AccessibilityLogEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED) {
+    	  // a scroll event right after text changed is probably triggered by it, and probably noise
+    	  snippet.getEvents().remove(size - 1);
+    	  return true;
       }
     }
     return false;

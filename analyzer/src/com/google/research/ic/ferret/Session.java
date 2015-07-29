@@ -17,6 +17,7 @@ package com.google.research.ic.ferret;
 
 import com.google.research.ic.ferret.comm.DeviceEventReceiver;
 import com.google.research.ic.ferret.data.Event;
+import com.google.research.ic.ferret.data.LogLoader;
 import com.google.research.ic.ferret.data.ResultSet;
 import com.google.research.ic.ferret.data.Snippet;
 import com.google.research.ic.ferret.data.attributes.UserNameAttributeHandler;
@@ -57,19 +58,28 @@ public class Session {
     }
     attrKeysToShow.add(UserNameAttributeHandler.KEY);
     DemoEventListener deListener = new DemoEventListener() {
-      
+
       @Override
       public void onEventReceived(Event event) {
+        boolean doNotify = false;
         //Debug.log("Event received: " + event);
         if (recording) {
           synchronized(queryLock) {
             if (currentQuery == null) {
               resetCurrentQuery();
+              doNotify = true;
             }
             currentQuery.addEvent(event);
-            demoEventQueue.add(event);
+            Debug.log("Adding event before compress " + event);
+            if (!LogLoader.getLogLoader().getParser().compressSnippet(currentQuery, false)) {
+              Debug.log("Adding event " + event);
+              demoEventQueue.add(event);    
+              doNotify = true;
+            }
           }
-          notifyListeners(); 
+          if (doNotify) {
+            notifyListeners(); 
+          }
         }// if (!recording) ignore
       }
     };
