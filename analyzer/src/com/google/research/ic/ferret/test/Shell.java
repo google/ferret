@@ -318,9 +318,9 @@ public class Shell {
         if (query != null) {
           UberResultSet urs = SearchEngine.getSearchEngine().findMatches(query);
 
-          ResultSet closeMatches = urs.getCloseMatches();
+          ResultSet closeMatches = urs.getStrongMatches();
           closeMatches.rank();
-          System.out.println("Top " + closeMatches.getResults().size() + " close matches: ");
+          System.out.println("\nTop " + closeMatches.getResults().size() + " close matches: ");
           for (int i = 0; i < 50; i++) {
             if (closeMatches.getResults().size() > i) {
               SubSequence match = closeMatches.getResults().get(i);
@@ -332,7 +332,7 @@ public class Shell {
 
           ResultSet weakMatches = urs.getWeakMatches();
           weakMatches.rank();
-          System.out.println("Top " + weakMatches.getResults().size() + " weak matches: ");
+          System.out.println("\nTop " + weakMatches.getResults().size() + " weak matches: ");
           for (int i = 0; i < 50; i++) {
             if (weakMatches.getResults().size() > i) {
               SubSequence match = weakMatches.getResults().get(i);
@@ -341,8 +341,31 @@ public class Shell {
               continue;
             }
           }
-          //              System.out.println("NGram Tables for query: ");
-          //              printNGramTables(snippets.subList(0, 1));
+          
+          ResultSet elongationMatches = urs.getElongatedMatches();
+          elongationMatches.rank();
+          System.out.println("\nTop " + elongationMatches.getResults().size() + " elongated matches: ");
+          for (int i = 0; i < 50; i++) {
+            if (elongationMatches.getResults().size() > i) {
+              SubSequence match = elongationMatches.getResults().get(i);
+              System.out.println("\t" + match + " (from " + getSnippetLabel(match.getSnippet()) + ")");
+            } else {
+              continue;
+            }
+          }
+
+          ResultSet altEndingMatches = urs.getAltEndingMatches();
+          altEndingMatches.rank();
+          System.out.println("\nTop " + altEndingMatches.getResults().size() + " elongated matches: ");
+          for (int i = 0; i < 50; i++) {
+            if (altEndingMatches.getResults().size() > i) {
+              SubSequence match = altEndingMatches.getResults().get(i);
+              System.out.println("\t" + match + " (from " + getSnippetLabel(match.getSnippet()) + ")");
+            } else {
+              continue;
+            }
+          }
+
           response = "";
         }
       } else {

@@ -22,20 +22,22 @@ package com.google.research.ic.ferret.data;
  */
 public class UberResultSet {
 
-  private ResultSet closeMatches = null;
+  private ResultSet strongMatches = null;
   private ResultSet weakMatches = null;
-  private ResultSet compressedMatches = null;
   private ResultSet elongatedMatches = null;
-  private ResultSet startMatches = null;
-  private ResultSet endMatches = null;
-  private ResultSet middleMatches = null;
+  private ResultSet altEndingMatches = null;
+  private Snippet query = null;
 
-  public ResultSet getCloseMatches() {
-    return closeMatches;
+  public UberResultSet(Snippet query) {
+    this.query = query;
+  }
+
+  public ResultSet getStrongMatches() {
+    return strongMatches;
   }
   
-  public void setCloseMatches(ResultSet closeMatches) {
-    this.closeMatches = closeMatches;
+  public void setStrongMatches(ResultSet closeMatches) {
+    this.strongMatches = closeMatches;
   }
   
   public ResultSet getWeakMatches() {
@@ -45,15 +47,7 @@ public class UberResultSet {
   public void setWeakMatches(ResultSet weakMatches) {
     this.weakMatches = weakMatches;
   }
-  
-  public ResultSet getCompressedMatches() {
-    return compressedMatches;
-  }
-  
-  public void setCompressedMatches(ResultSet compressedMatches) {
-    this.compressedMatches = compressedMatches;
-  }
-  
+
   public ResultSet getElongatedMatches() {
     return elongatedMatches;
   }
@@ -62,30 +56,39 @@ public class UberResultSet {
     this.elongatedMatches = elongatedMatches;
   }
   
-  public ResultSet getStartMatches() {
-    return startMatches;
-  }
-  
-  public void setStartMatches(ResultSet startMatches) {
-    this.startMatches = startMatches;
-  }
-  
-  public ResultSet getEndMatches() {
-    return endMatches;
-  }
-  
-  public void setEndMatches(ResultSet endMatches) {
-    this.endMatches = endMatches;
-  }
-  
-  public ResultSet getMiddleMatches() {
-    return middleMatches;
-  }
-  
-  public void setMiddleMatches(ResultSet middleMatches) {
-    this.middleMatches = middleMatches;
+  public ResultSet getAltEndingMatches() {
+    return altEndingMatches;
   }
 
+  public void setAltEndingMatches(ResultSet altEndingMatches) {
+    this.altEndingMatches = altEndingMatches;
+  }
+
+  public void mergeResults(UberResultSet otherURS) {
+    if (strongMatches == null) {
+      strongMatches = new ResultSet();
+    }
+    strongMatches.mergeResults(otherURS.getStrongMatches());
+    
+    if (weakMatches == null) {
+      weakMatches = new ResultSet();
+    }
+    weakMatches.mergeResults(otherURS.getWeakMatches());
+
+    if (elongatedMatches == null) {
+      elongatedMatches = new ResultSet();
+    }
+    elongatedMatches.mergeResults(otherURS.getElongatedMatches());
+
+    if (altEndingMatches == null) {
+      altEndingMatches = new ResultSet();
+    }
+    altEndingMatches.mergeResults(otherURS.getAltEndingMatches());
+    
+    
+  }
+  
+  
 }
 
 

@@ -168,7 +168,7 @@ public class EvalFramework {
         long t = System.currentTimeMillis();
         UberResultSet urs = SearchEngine.getSearchEngine().findMatches(query);
         tiResult.searchTime = System.currentTimeMillis() - t;
-        ResultSet closeMatches = urs.getCloseMatches();
+        ResultSet closeMatches = urs.getStrongMatches();
         ResultSet weakMatches = urs.getWeakMatches();
         List<LabeledRegion> resultRegions = null;
         if (closeMatches != null) {

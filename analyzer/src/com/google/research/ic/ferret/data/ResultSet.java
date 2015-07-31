@@ -57,6 +57,14 @@ public class ResultSet {
     return results;
   }
         
+  public Snippet getSourceQuery() {
+    return sourceQuery;
+  }
+
+  public void setSourceQuery(Snippet sourceQuery) {
+    this.sourceQuery = sourceQuery;
+  }
+
   public void addResults(List<SubSequence> newResults) {
     if (results == null) {
       results = new ArrayList<SubSequence>();
@@ -122,6 +130,13 @@ public class ResultSet {
   
   public int size() {
     return getResults().size();
+  }
+
+  public void mergeResults(ResultSet otherRS) {
+    if (sourceQuery == null && otherRS.getSourceQuery() != null) {
+      sourceQuery = otherRS.getSourceQuery();
+    }
+    addResults(otherRS.getResults());
   }
   
   

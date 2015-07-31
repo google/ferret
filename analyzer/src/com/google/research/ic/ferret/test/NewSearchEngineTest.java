@@ -71,7 +71,7 @@ public class NewSearchEngineTest {
     printQuery();
     
     for (int i = 0; i < queries.size(); i++) {
-      ResultSet rs = SearchEngine.getSearchEngine().findMatches(queries.get(i)).getCloseMatches();
+      ResultSet rs = SearchEngine.getSearchEngine().findMatches(queries.get(i)).getStrongMatches();
       printSpace();
       FilteredResultSet frs = rs.filter(new FilterSpec(0.0, 0.3, -1));
       System.err.println("Filtered results for " + i);
@@ -104,7 +104,7 @@ public class NewSearchEngineTest {
     snips.add(simpleSnippet);
     se.indexLogs(snips, nGramLength);
 
-    ResultSet rs = se.findMatches(simpleSnippet).getCloseMatches();
+    ResultSet rs = se.findMatches(simpleSnippet).getStrongMatches();
     Debug.log("found " + rs.getResults().size() + " results");
     for (SubSequence subS : rs.getResults()) {
       System.out.println(subS.toString());
