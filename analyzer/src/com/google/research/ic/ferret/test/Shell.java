@@ -356,7 +356,7 @@ public class Shell {
 
           ResultSet altEndingMatches = urs.getAltEndingMatches();
           altEndingMatches.rank();
-          System.out.println("\nTop " + altEndingMatches.getResults().size() + " elongated matches: ");
+          System.out.println("\nTop " + altEndingMatches.getResults().size() + " alternat ending matches: ");
           for (int i = 0; i < 50; i++) {
             if (altEndingMatches.getResults().size() > i) {
               SubSequence match = altEndingMatches.getResults().get(i);
