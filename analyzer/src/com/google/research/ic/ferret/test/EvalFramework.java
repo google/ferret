@@ -166,7 +166,7 @@ public class EvalFramework {
         //printLabeledRegion(lr);
         Snippet query = lr.getRegionSnippet();
         long t = System.currentTimeMillis();
-        UberResultSet urs = SearchEngine.getSearchEngine().searchMatches(query);
+        UberResultSet urs = SearchEngine.getSearchEngine().findMatches(query);
         tiResult.searchTime = System.currentTimeMillis() - t;
         ResultSet closeMatches = urs.getCloseMatches();
         ResultSet weakMatches = urs.getWeakMatches();

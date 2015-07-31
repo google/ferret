@@ -169,46 +169,41 @@ public class Shell {
       
     } else if (command.equals("print")) {      
 
-      List<Snippet> snippets = null; 
-      Snippet snippet = null;
+      Snippet snippet = getSnippetFromLog(arg);
       int startIdx = 0;
       int endIdx = 0;
-      if (arg != null) {   
-        if (Character.isDigit(arg.charAt(0))) {
-          int logIdx = Integer.parseInt(arg);
-          snippets = SearchEngine.getSearchEngine().getLogSnippets();
-          if (logIdx < snippets.size()) {
-            snippet = snippets.get(logIdx);
-            System.out.println("Snippet from log " + logIdx + "-" + getSnippetLabel(snippet));
-          } else {
-            response = "log at index " + logIdx + " doesn't exist";
-          }                        
-          if (params != null && params.length == 2) {
-            startIdx = Integer.parseInt(params[0]);
-            endIdx = Integer.parseInt(params[1]);
-          } else {
-            startIdx = 0;
-            endIdx = snippet.getEvents().size();
-          }
-          printEvents(snippet, startIdx, endIdx);
-        } else {
-          snippets = LogLoader.getLogLoader().loadLogFile(arg);    
-          for (Snippet s : snippets) {
-            System.out.println("Snippet from file " + arg + "-" + getSnippetLabel(s));
-            if (params != null && params.length == 2) {
-              startIdx = Integer.parseInt(params[0]);
-              endIdx = Integer.parseInt(params[1]);
-            } else {
-              startIdx = 0;
-              endIdx = s.getEvents().size();                 
-            }
-            printEvents(s, startIdx, endIdx);
-          }
-        }
-        response = "finished dump";
+      
+      if (params != null && params.length == 2) {
+        startIdx = Integer.parseInt(params[0]);
+        endIdx = Integer.parseInt(params[1]);
       } else {
-        response = "please specify filename for dump";
-      }        
+        startIdx = 0;
+        endIdx = snippet.getEvents().size();
+      }
+      printEvents(snippet, startIdx, endIdx);
+      response = "finished dump";         
+      
+    } else if (command.equals("extract")) {      
+      String extractFileName = null;
+      Snippet snippet = getSnippetFromLog(arg);
+      int startIdx = 0;
+      int endIdx = 0;
+      
+      if (params != null && params.length > 2) {
+        startIdx = Integer.parseInt(params[0]);
+        endIdx = Integer.parseInt(params[1]);
+        extractFileName = params[2];
+      } else {
+        startIdx = 0;
+        endIdx = snippet.getEvents().size();
+        extractFileName = params[0];
+      }
+      
+      for (int i = startIdx; i < endIdx; i++) {
+        LogLoader.getLogLoader().getParser().writeEvent(snippet.getEvents().get(i), new File(extractFileName));
+      }
+      response = "wrote " + (endIdx - startIdx) + " events to " + extractFileName;  
+      
     } else if (command.equals("tagfile")) {
       File stampFile = new File(arg);
       try {
@@ -321,7 +316,7 @@ public class Shell {
           }
         }
         if (query != null) {
-          UberResultSet urs = SearchEngine.getSearchEngine().searchMatches(query);
+          UberResultSet urs = SearchEngine.getSearchEngine().findMatches(query);
 
           ResultSet closeMatches = urs.getCloseMatches();
           closeMatches.rank();
@@ -458,4 +453,26 @@ public class Shell {
     return snip.getUserName() + "@" + snip.getStartDate().getTime();
   }
   
+  private static Snippet getSnippetFromLog(String logName) {
+    List<Snippet> snippets = null;
+    Snippet snippet = null; 
+    if (logName != null) {   
+      if (Character.isDigit(logName.charAt(0))) {
+        int logIdx = Integer.parseInt(logName);
+        snippets = SearchEngine.getSearchEngine().getLogSnippets();
+        if (logIdx < snippets.size()) {
+          snippet = snippets.get(logIdx);
+        } else {
+          throw new IllegalArgumentException("Log at " + logName + " doesn't exist");
+        }
+      } else {
+        snippets = LogLoader.getLogLoader().loadLogFile(logName);
+        if (snippets.size() > 1) {
+          throw new IllegalStateException("log file " + logName + " contains " + snippets.size() + " snippets");
+        }
+        snippet = snippets.get(0);
+      }
+    }
+    return snippet;
+  }
 }

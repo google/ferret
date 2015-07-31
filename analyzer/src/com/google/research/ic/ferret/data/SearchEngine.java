@@ -20,6 +20,7 @@ import com.google.research.ic.ferret.test.Debug;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,12 +30,59 @@ public class SearchEngine {
 
   private static SearchEngine theSearchEngine = null;
   private ArrayList<Snippet> indexedLogs = null;
-  private static int MAX_SUBSEQUENCE_LENGTH = 300;
   
-  /** NGram string to their index in the vector space */
   private HashMap<String, Integer> identifierIds = new HashMap<String, Integer>();
   private ArrayList<Integer> nGramLengthsInUse = new ArrayList<Integer>();
   
+  
+  // Algorithm parameters
+  private double nGramDensity = 0.33; // how many ngrams must be found for a region to be considered a candidate?
+  private double admittanceThreshold = 0.5; // for all algorithms
+  private int elongationFactor = 6; // multiples of query length, for finding elongations
+  private double fractionToMatch = 0.25; // fraction of the query to match, for finding alternate endings
+  
+  /** inner class definitions */
+  private static class LocatedNGram implements Comparable {
+    public String nGramId = null;
+    public int location = -1;
+    public int nGramLength = -1;
+    
+    public LocatedNGram(String nGramId, int location, int nGramLength) {
+      this.nGramId = nGramId;
+      this.location = location;
+      this.nGramLength = nGramLength;
+    }
+    
+    public int compareTo(Object that) {
+      return this.location - ((LocatedNGram) that).location;
+    }
+  }
+  
+  private static class Neighborhood {
+    public Snippet snippet = null;
+    public int startIndex = -1;
+    public int endIndex = -1;
+    public List<LocatedNGram> locatedNGrams = new ArrayList<LocatedNGram>();
+  }
+  
+  private static class VectorNeighborhood extends Neighborhood {
+    List<List<LocatedNGram>> vectors = new ArrayList<List<LocatedNGram>>();
+  }
+  
+  private static class NeighborhoodCollector {
+    public List<Neighborhood> strongMatchNeighborhoods = new ArrayList<Neighborhood>();
+    public List<Neighborhood> elongationNeighborhoods = new ArrayList<Neighborhood>();
+    public List<Neighborhood> alternateEndingNeighborhoods = new ArrayList<Neighborhood>();
+    public List<Neighborhood> weakMatchNeighborhoods = new ArrayList<Neighborhood>();
+  }  
+  
+  private static class CandidateCollector {
+    public List<LocatedNGram> strongMatchCandidates = new ArrayList<LocatedNGram>();
+    public List<LocatedNGram> elongationCandidates = new ArrayList<LocatedNGram>();
+    public List<LocatedNGram> altEndingCandidates = new ArrayList<LocatedNGram>();
+  }
+  /** end inner class definitions */
+
   private SearchEngine() {
     indexedLogs = new ArrayList<Snippet>();
   }
@@ -75,42 +123,7 @@ public class SearchEngine {
       }
     }
   }
-  
-  public void indexSubSequences(final List<Snippet> logs, boolean reset) {
-    if (reset) {
-      clearIndex();
-    }
-    ParallelTaskExecutor.getInstance().compute(logs.size(), new ParallelTask() {
-      @Override
-      public void init(int taskId) { 
-      }
 
-      @Override
-      public Boolean compute(int index) {
-        indexSubSequences(logs.get(index));
-        return true;
-      }
-    });
-    indexedLogs.addAll(logs);
-  }
-  
-  private void indexSubSequences(Snippet snippet) {
-    int size = snippet.getEvents().size();
-    // for debugging
-    final int numSubSequences = size * (size - 1) / 2;
-    int numComplete = 0;
-    List<SubSequence> subsequences = new ArrayList<SubSequence>(numSubSequences);
-    for (int start = 0; start < size; start++) {
-      int endIdx = (MAX_SUBSEQUENCE_LENGTH < (size - start)) ? (start + MAX_SUBSEQUENCE_LENGTH) : size;
-      for (int end = start + 1; end <= endIdx; end++) {
-        SubSequence subsequence = new SubSequence(start, end, snippet);
-        subsequence.setNGram(extractNGrams(subsequence));
-        subsequences.add(subsequence);
-        numComplete++;
-      }
-    }
-    snippet.setIndexedSequences(subsequences);
-  }
   
   private HashMap<Integer, Integer> extractNGrams(SubSequence subsequence) {
     Event lastEvent = null;
@@ -141,47 +154,137 @@ public class SearchEngine {
   }
 
   
-  public UberResultSet searchMatches(Snippet query){
-    return searchMatches(query, indexedLogs);
+  public UberResultSet findMatches(Snippet query){
+    return findMatches(query, indexedLogs);
   }
 
-  public UberResultSet searchMatches(Snippet query, final List<Snippet> logs) {
-    return searchMatchesUsingPFEM(query, logs);
+  public UberResultSet findMatches(Snippet query, final List<Snippet> logs) {
+    return findMatchesUsingPFEM(query, logs);
   }
   
-  public UberResultSet searchMatchesUsingPFEM(Snippet query, final List<Snippet> logs) {
-    List<SubSequence> results = new ArrayList<SubSequence>();
+  public UberResultSet findMatchesUsingPFEM(Snippet query, final List<Snippet> logs) {
     UberResultSet urs = new UberResultSet();
     
-    
+    // Loop through all nGramLengths. Typically we only use on nGramLength.
     for (Integer i : nGramLengthsInUse) {
       //Debug.log("nGramLengths " + nGramLengthsInUse);
       buildNGramIndex(query, i);
       List<Integer> matchedLocations = new ArrayList<Integer>();
+      List<LocatedNGram> locatedNGrams = new ArrayList<LocatedNGram>();
       Map<String, List<Integer>> queryMap = query.getNGramTable(i);
+
       if (queryMap == null) {
         continue;
       }
       //Debug.log("Got queryMap for nGram length " + i + ": " + queryMap);
       
       for (Snippet log : logs) {
-        matchedLocations.clear();
+        locatedNGrams.clear();
         // go through each ngram in the query and find matching locations in this log
         for(String key : queryMap.keySet()) {
           
           List<Integer> theseMatches = log.getNGramTable(i).get(key);
+
           if (theseMatches != null) {
-            matchedLocations.addAll(theseMatches); 
+            for (Integer j: theseMatches) {
+              LocatedNGram lng = new LocatedNGram(key, j.intValue(), i);   
+              locatedNGrams.add(lng);
+            }
           }
         }
         // now we have all the locations in the log where any ngram in the query matched
         // so we take a closer look at each location to compile a non-overlapping list of matches
-        if (matchedLocations.size() > 0) {
-          testMatchedLocations(query, log, matchedLocations, i, urs);        
+
+        
+        Collections.sort(locatedNGrams);
+        
+        //Some debugging output
+        System.out.println("\n\n Located NGrams for log " + log.toString());
+        for (LocatedNGram lng : locatedNGrams) {
+          System.out.println(lng.location + "\t" + lng.nGramId);
         }
+
+        CandidateCollector canColl = extractCandidates(locatedNGrams, query.size());
+        NeighborhoodCollector neighColl = assignNeighborhoods(canColl, query.size());
+        
+//        if (matchedLocations.size() > 0) {
+//          testMatchedLocations(query, log, matchedLocations, i, urs);        
+//        }
       }
     }
     return urs;
+  }
+  
+  private CandidateCollector extractCandidates(List<LocatedNGram> locatedNGrams, int querySize) {
+    
+    CandidateCollector collector = new CandidateCollector();
+
+    Collections.sort(locatedNGrams);
+    
+    for (int i = 0; i < locatedNGrams.size(); i++) {
+      LocatedNGram thisLNG = locatedNGrams.get(i);
+      int strongNGramCount = 0;
+      int elongNGramCount = 0;
+      int altEndNGramCount = 0;
+
+      int elongationLength = querySize * elongationFactor; 
+      int altEndLength = (int) Math.ceil(querySize * fractionToMatch + 1);
+      
+      for (int j = i + 1; j < locatedNGrams.size(); j++) {
+        LocatedNGram upstreamLNG = locatedNGrams.get(j);
+        if (upstreamLNG.location + upstreamLNG.nGramLength < 
+            thisLNG.location + altEndLength) {
+          altEndNGramCount++;
+        }
+        
+        if (upstreamLNG.location + upstreamLNG.nGramLength < 
+            thisLNG.location + querySize) {
+          strongNGramCount++;
+        }
+        
+        if (upstreamLNG.location + upstreamLNG.nGramLength < 
+            thisLNG.location + elongationLength) {
+          elongNGramCount++;
+        } else {
+          break; // if we've run off the end of the elongation length, we can stop
+        }
+      }
+      double strongDensity = (double) strongNGramCount / (double) querySize;
+      double elongDensity = (double) elongNGramCount / (double) elongationLength;
+      double altEndDensity = (double) altEndNGramCount / (double) altEndLength;
+
+      if (strongDensity >= nGramDensity) {
+        collector.strongMatchCandidates.add(thisLNG);
+      }
+      if (elongDensity >= nGramDensity) {
+        collector.elongationCandidates.add(thisLNG);
+      }
+      if (altEndDensity >= nGramDensity) {
+        collector.altEndingCandidates.add(thisLNG);
+      }
+    }
+    return collector;
+  }
+  
+  public NeighborhoodCollector assignNeighborhoods(CandidateCollector canColl, int querySize) {
+    
+    NeighborhoodCollector collector = new NeighborhoodCollector();
+    
+    Neighborhood currentNeighborhood = null;
+    
+    for (int i = 0; i < canColl.strongMatchCandidates.size(); i++) {
+      LocatedNGram thisLNG = canColl.strongMatchCandidates.get(i);
+      if (currentNeighborhood == null) {
+        currentNeighborhood = new Neighborhood();
+        currentNeighborhood.locatedNGrams.add(thisLNG);
+        currentNeighborhood.startIndex = thisLNG.location;
+        currentNeighborhood.endIndex = thisLNG.location + querySize;
+        
+      }
+      
+    }     
+    
+    return collector;
   }
   
   public void testMatchedLocations(Snippet query, Snippet log, List<Integer> matchedLocations, int nGramLength, UberResultSet urs) {
@@ -384,125 +487,7 @@ public class SearchEngine {
       System.out.print("\n");
     }
   }
-  
-  public ResultSet searchMatchesUsingSubsequences(Snippet query) {
-    return searchMatchesUsingSubsequences(query, indexedLogs);
-  }
-  
-  public ResultSet searchMatchesUsingSubsequences(Snippet query, final List<Snippet> logs) {
-    // parallel searching was causing null entries to be added to the results list
-    // So turned off for now
-    boolean useParallel = false; 
     
-    /** Extract ngrams for the entire query sequence */
-    final SubSequence querySequence = new SubSequence(0, query.getEvents().size(), query);
-    querySequence.setNGram(extractNGrams(querySequence));
-    
-    final ArrayList<SubSequence> results = new ArrayList<SubSequence>();
-    final Map<String, Attribute> attributes = new HashMap<String, Attribute>();
-    /** 
-     * Calculate the distance between the query and each indexed subsequence of
-     * the log streams based on their ngram representations.
-     */
-    if (useParallel) {
-      ParallelTaskExecutor.getInstance().compute(logs.size(), new ParallelTask() {
-        @Override
-        public void init(int taskId) { 
-        }
-        @Override
-        public Boolean compute(int index) {
-          for (SubSequence subsequence : logs.get(index).getIndexedSubsequences()) {
-            double distance = distance(subsequence.getNGram(), querySequence.getNGram());
-            subsequence.setDistance(distance);
-            results.add(subsequence);
-            for (Attribute attr : subsequence.getSnippet().getAttributes()) {
-              attributes.put(attr.getKey(), attr);
-            }
-          }
-          return true;
-        }
-      });
-
-    } else {
-      for (Snippet log : logs){
-        for (SubSequence subsequence : log.getIndexedSubsequences()) {
-          double distance = distance(subsequence.getNGram(), querySequence.getNGram());
-          subsequence.setDistance(distance);
-          results.add(subsequence);
-          for (Attribute attr : subsequence.getSnippet().getAttributes()) {
-            attributes.put(attr.getKey(), attr);
-          }
-        }
-      }
-    }
-    try {
-      Collections.sort(results);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    return new ResultSet(results, query);
-  }
-
-  private double distance(HashMap<Integer, Integer> ngram1,
-      HashMap<Integer, Integer> ngram2) {
-    return cosineDistance(ngram1, ngram2);
-  }
-  
-  private double euclideanDistance(HashMap<Integer, Integer> ngram1,
-      HashMap<Integer, Integer> ngram2) {
-    HashSet<Integer> indices = new HashSet<Integer>();
-    indices.addAll(ngram1.keySet());
-    indices.addAll(ngram2.keySet());
-    float sum = 0;
-    for (Integer index : indices) {
-      Integer value1 = ngram1.get(index);
-      Integer value2 = ngram2.get(index);
-      int v1 = 0;
-      if (value1 != null) {
-        v1 = value1;
-      }
-      int v2 = 0;
-      if (value2 != null) {
-        v2 = value2;
-      }
-      sum += (v1 - v2) * (v1 - v2);
-    }
-    return sum;
-  }
-  
-  private double cosineDistance(HashMap<Integer, Integer> ngram1,
-      HashMap<Integer, Integer> ngram2) {
-    double magnitude1 = computeMagnitude(ngram1);
-    double magnitude2 = computeMagnitude(ngram2);
-    double denominator = magnitude1 * magnitude2;
-    HashSet<Integer> indices = new HashSet<Integer>();
-    indices.addAll(ngram1.keySet());
-    indices.addAll(ngram2.keySet());
-    float sum = 0;
-    for (Integer index : indices) {
-      Integer value1 = ngram1.get(index);
-      Integer value2 = ngram2.get(index);
-      int v1 = 0;
-      if (value1 != null) {
-        v1 = value1;
-      }
-      int v2 = 0;
-      if (value2 != null) {
-        v2 = value2;
-      }
-      sum += v1 * v2;
-    }
-    return Math.acos(sum / denominator) * 2 / Math.PI;
-  }
-
-  private double computeMagnitude(HashMap<Integer, Integer> ngram) {
-    int sum = 0;
-    for (Integer value : ngram.values()) {
-      sum += value * value;
-    }
-    return Math.sqrt(sum);
-  }
-  
   public ArrayList<Snippet> getLogSnippets() {
     return indexedLogs;
   }

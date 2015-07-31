@@ -113,7 +113,7 @@ public class RESTHandler {
     if (currentQuery != null) {
       long t = System.currentTimeMillis();
       Debug.log("Started searching...");
-      ResultSet resultSet = SearchEngine.getSearchEngine().searchMatches(currentQuery).getCloseMatches();
+      ResultSet resultSet = SearchEngine.getSearchEngine().findMatches(currentQuery).getCloseMatches();
       Debug.log("Finished searching after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
       ResultSet trimmedResultSet = resultSet.filter(new FilterSpec(0.0, 5.0, 20));
 
@@ -145,7 +145,7 @@ public class RESTHandler {
     if (currentQuery != null) {
       long t = System.currentTimeMillis();
       Debug.log("Started searching...");
-      ResultSet resultSet = SearchEngine.getSearchEngine().searchMatches(currentQuery).getCloseMatches();
+      ResultSet resultSet = SearchEngine.getSearchEngine().findMatches(currentQuery).getCloseMatches();
       Debug.log("Finished searching after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
       Debug.log("There are " + resultSet.getResults().size() + " subSequences in result set");
       Debug.log("Query is: ");
@@ -333,7 +333,7 @@ public class RESTHandler {
     if (currentQuery != null) {
       long t = System.currentTimeMillis();
       Debug.log("Started searching...");
-      ResultSet resultSet = SearchEngine.getSearchEngine().searchMatches(currentQuery).getCloseMatches();
+      ResultSet resultSet = SearchEngine.getSearchEngine().findMatches(currentQuery).getCloseMatches();
       Debug.log("Finished searching after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
       ResultSet trimmedResultSet = resultSet.filter(new FilterSpec(0.0, 5.0, 20));
 

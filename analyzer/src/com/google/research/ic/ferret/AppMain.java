@@ -20,19 +20,15 @@ import com.google.research.ic.ferret.data.DemoManager;
 import com.google.research.ic.ferret.data.LogLoader;
 import com.google.research.ic.ferret.data.SearchEngine;
 import com.google.research.ic.ferret.data.Snippet;
-import com.google.research.ic.ferret.data.SubSequence;
 import com.google.research.ic.ferret.data.attributes.AttributeManager;
 import com.google.research.ic.ferret.data.attributes.DurationAttributeHandler;
 import com.google.research.ic.ferret.data.attributes.UserNameAttributeHandler;
 import com.google.research.ic.ferret.test.Debug;
 import com.google.research.ic.ferret.uiserver.UIServer;
 
-import java.io.File;
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-
-import javax.swing.SwingUtilities;
 
 public class AppMain {
 
@@ -155,5 +151,16 @@ public class AppMain {
 //      }
 //    }
     Debug.log("Server initialized. Ready for action.");
+    
+    String os = System.getProperty("os.name");
+    try {
+      if (os.startsWith("Linux")) {
+        Runtime.getRuntime().exec("xdg-open webui/index.html");
+      } else if (os.startsWith("MacOS")) {      
+        Runtime.getRuntime().exec("open webui/index.html");
+      }
+    } catch (IOException e) {
+      Debug.log("Couldn't launch front end. " + e);
+    }
   }
 }

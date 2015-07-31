@@ -211,5 +211,9 @@ import java.util.Map;
   public void setSourceFilename(String name) {
     sourceFilename = name;
   }
+  
+  public String toString() {
+    return "Snippet from file " + getSourceFilename() + ", user=" + getUserName() + ", size=" + size();
+  }
 }
 
