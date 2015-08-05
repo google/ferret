@@ -515,7 +515,7 @@ public class SearchEngine {
     for (PromotedLocation pl : strongMatchPromotions) {
       int endIndex = Math.min(pl.location + query.size(), log.size());
       SubSequence subS = new SubSequence(pl.location, endIndex, log);
-      if (pl.weightedDistance < admittanceThreshold) {
+      if (pl.weightedDistance <= admittanceThreshold) {
         strongMatchResultSequences.add(subS);
       } else {
         weakMatchResultSequences.add(subS);
@@ -529,7 +529,7 @@ public class SearchEngine {
     for (PromotedLocation pl : elongationPromotions) {
       int endIndex = Math.min(pl.location + elongSize, log.size());
       SubSequence subS = new SubSequence(pl.location, endIndex, log); 
-      if (pl.weightedDistance < admittanceThreshold) {
+      if (pl.weightedDistance <= admittanceThreshold) {
         elongationResultSequences.add(subS);
       } 
     }
@@ -539,11 +539,11 @@ public class SearchEngine {
     for (PromotedLocation pl : altEndingPromotions) {
       int endIndex = Math.min(pl.location + query.size(), log.size());
       SubSequence subS = new SubSequence(pl.location, endIndex, log); 
-      if (pl.weightedDistance < admittanceThreshold) {
+      if (pl.weightedDistance <= admittanceThreshold) {
         altEndingResultSequences.add(subS);
       } 
     }
-    urs.setAltEndingMatches(new ResultSet(elongationResultSequences, query));
+    urs.setAltEndingMatches(new ResultSet(altEndingResultSequences, query));
     
     //TODO: PRUNING!!
     return urs;

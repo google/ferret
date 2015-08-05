@@ -501,6 +501,7 @@ function createEventPanel(container, event) {
   var event_description = "<br/>" + event.displayEvent;
   var event_extra = "<br/>" + event.displayExtra;  
   
+  
   var title=jQuery('<div/>', {
     id: "event-title-" + event_id,
     html: event_title,

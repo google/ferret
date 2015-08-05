@@ -26,6 +26,6 @@ public class Tag {
     label = l;
   }
   public String toString() {
-    return "tag:" + label;
+    return "tag:" + label + ", startTime:" + startTime + ", endTime:" + endTime;
   }
 }

@@ -70,9 +70,7 @@ public class Session {
               doNotify = true;
             }
             currentQuery.addEvent(event);
-            Debug.log("Adding event before compress " + event);
             if (!LogLoader.getLogLoader().getParser().compressSnippet(currentQuery, false)) {
-              Debug.log("Adding event " + event);
               demoEventQueue.add(event);    
               doNotify = true;
             }

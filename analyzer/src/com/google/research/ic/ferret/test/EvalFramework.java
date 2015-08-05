@@ -41,7 +41,7 @@ public class EvalFramework {
   private static Map<String, List<LabeledRegion>> tagMap = new HashMap<String, List<LabeledRegion>>();
   private static Map<Snippet, List<LabeledRegion>> snippetTagMap = new HashMap<Snippet, List<LabeledRegion>>();
   
-  private static final String DEFAULT_LOG_DIR = "eval-data";
+  private static final String DEFAULT_LOG_DIR = "../test-data/eval-data";
   private static String logDirName = DEFAULT_LOG_DIR;
   
   private static float[] avgPrecisions = new float[41];
@@ -54,11 +54,16 @@ public class EvalFramework {
     public float rec = -0.1f;
     public List<String> closeMatches = null;
     public List<String> weakMatches = null;
+    public List<String> elongMatches = null;
+    public List<String> altEndMatches = null;
+    
     public long searchTime = -1;
     
     public TagInstanceResult() {
       closeMatches = new ArrayList<String>();
-      weakMatches = new ArrayList<String>();      
+      weakMatches = new ArrayList<String>();
+      elongMatches = new ArrayList<String>();
+      altEndMatches = new ArrayList<String>();
     }
   }
   private static List<TagInstanceResult> tagInstanceResults = new ArrayList<TagInstanceResult>();
@@ -170,6 +175,9 @@ public class EvalFramework {
         tiResult.searchTime = System.currentTimeMillis() - t;
         ResultSet closeMatches = urs.getStrongMatches();
         ResultSet weakMatches = urs.getWeakMatches();
+        ResultSet elongMatches = urs.getElongatedMatches();
+        ResultSet altEndingMatches = urs.getAltEndingMatches();
+        
         List<LabeledRegion> resultRegions = null;
         if (closeMatches != null) {
           resultRegions = getResultRegions(closeMatches);
@@ -204,7 +212,7 @@ public class EvalFramework {
           recSum += rec;
           //System.out.println("tp: " + tp + ", fp: " + fp  + ", fn: " + fn + ", prec: " + prec + ", rec: " + rec);
         } else {
-          System.out.println("There were no close matches");
+          //System.out.println("There were no close matches");
           tiResult.prec = Float.NaN;
           tiResult.rec = Float.NaN;
         }
@@ -215,8 +223,25 @@ public class EvalFramework {
           }
           //System.out.println("Weak-matching regions are: " + resultRegions);   
         } else {
-          System.out.println("There were no weak matches");
+          //System.out.println("There were no weak matches");
         }
+        if (elongMatches != null) {
+          resultRegions = getResultRegions(elongMatches);
+          for (LabeledRegion rr : resultRegions) {
+            tiResult.elongMatches.add(rr.toString());
+          }
+        } else {
+          //System.out.println("There were no weak matches");
+        }
+        if (altEndingMatches != null) {
+          resultRegions = getResultRegions(altEndingMatches);
+          for (LabeledRegion rr : resultRegions) {
+            tiResult.altEndMatches.add(rr.toString());
+          }
+        } else {
+          //System.out.println("There were no weak matches");
+        }
+
         tagInstanceResults.add(tiResult);
       } // end processing tag instance
       
@@ -231,10 +256,12 @@ public class EvalFramework {
     } // end processing tag group
     
     System.out.println("Instance Results: ");
-    System.out.println("\ttag-grp \ttag-inst \tprec \trec \tclose-time \tweak-time");
+    System.out.println("\ttag-grp \ttag-inst \tprec \trec \tsearch-time \tclose-matches \tweak-matches \telongations \talt-endings");
     for (TagInstanceResult tiResult: tagInstanceResults) {
-      System.out.printf("\t%s \t%s \t%.2f \t%.2f \t%d \t%s\n", tiResult.tagGroupName,
-          tiResult.tagInstanceName, tiResult.prec, tiResult.rec, tiResult.searchTime, tiResult.closeMatches);
+      System.out.printf("\t%s \t%s \t%.2f \t%.2f \t%d \t%s \t%s \t%s \t%s\n", 
+          tiResult.tagGroupName,tiResult.tagInstanceName, tiResult.prec, tiResult.rec, 
+          tiResult.searchTime, tiResult.closeMatches, tiResult.weakMatches,
+          tiResult.elongMatches, tiResult.altEndMatches);
     }
     
     System.out.println("tag\t\tprec\t\trec");
@@ -322,6 +349,7 @@ public class EvalFramework {
     long offset = 0;
     
     for (Tag tag : tags) {
+      System.out.println("Look at tag: " + tag);
       for ( ; logIndex < logSnippet.size(); logIndex++) {
         Event e = logSnippet.getEvents().get(logIndex);
         if (tag.label.contains("sync")) {
@@ -352,6 +380,13 @@ public class EvalFramework {
           endIndex = -1;
           break; // go to next tag
         }
+      }
+      // if we've run off the end of the log but still have an open tag, close it.
+      if (startEvent != null) {
+        endIndex = logSnippet.size() - 1;
+        endEvent = logSnippet.getEvents().get(endIndex);        
+        regions.add(new LabeledRegion(logSnippet, tag, startIndex, endIndex));
+        break; // if there are any tags left, they can't have any associated events
       }
     }
     return regions;
