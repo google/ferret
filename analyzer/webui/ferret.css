@@ -62,7 +62,7 @@ select {
   white-space: nowrap;
   overflow: auto;
   text-align: center;
-  height: 100px;
+  height: 150px;
   width: 150px;
   margin: 10px; }
 
@@ -117,9 +117,10 @@ select {
   border-style: solid;
   border-color: #d67934;
   border-radius: 15px;
+  text-align: center;
   margin: 5px;
-  height: 100px;
-  width: 100px;
+  height: 150px;
+  width: 150px;
   overflow: auto;
   padding: 0; }
 
@@ -153,6 +154,12 @@ select {
   text-align: center;
   font-family: Helvecitca, Verdana, sans-serif; }
 
+.thumb-canvas {
+  border-width: 2px;
+  border-color: black;
+  border-style: solid;
+  display: inline; }
+
 .arrow-icon-panel {
   display: inline-block;
   vertical-align: middle;
@@ -163,3 +170,5 @@ select {
   top: -60px;
   color: gray;
   margin: 3px; }
+
+/*# sourceMappingURL=ferret.css.map */

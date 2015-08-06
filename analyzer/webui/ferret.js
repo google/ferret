@@ -502,6 +502,31 @@ function createEventPanel(container, event) {
   var event_extra = "<br/>" + event.displayExtra;  
   
   
+  var screenWidth = event.wWidth / event.wRelativeWidth;
+  var screenHeight = event.wHeight / event.wRelativeHeight;
+  var aspectRatio = screenWidth / screenHeight;
+  
+  var canvasHeight = 80;
+  var canvasWidth = canvasHeight * aspectRatio;
+  
+  var widgetWidth = canvasWidth * event.wRelativeWidth;
+  var widgetHeight = canvasHeight * event.wRelativeHeight;
+  var widgetXPos = canvasWidth * event.wRelativeXPos;
+  var widgetYPos = canvasHeight * event.wRelativeYPos;
+  
+  var thumbCanvas=jQuery('<canvas/>', {
+  	id: "thumb-canvas-" + event_id,
+  	width: canvasWidth,
+  	height: canvasHeight, 
+  	class: "thumb-canvas"
+  });
+  thumbCanvas.prop({width: canvasWidth, height: canvasHeight});
+  
+  var ctx = thumbCanvas.get(0).getContext("2d");
+  ctx.fillStyle = "#AA4488";
+  ctx.fillRect(widgetXPos, widgetYPos, widgetWidth, widgetHeight);
+  
+    
   var title=jQuery('<div/>', {
     id: "event-title-" + event_id,
     html: event_title,
@@ -522,9 +547,10 @@ function createEventPanel(container, event) {
     id: "event-panel-" + event_id,
     class: "event-panel"
   })
-  .append($(title))
+  .append($(thumbCanvas))
+//  .append($(title))
+//  .append($(contents))
   .append($(contents))
-  .append($(extra))
   .attr('title', event.identifier);
   
   var arrow_panel=jQuery('<span/>', {
