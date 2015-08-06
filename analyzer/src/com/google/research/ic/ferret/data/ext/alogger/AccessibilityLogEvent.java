@@ -15,6 +15,7 @@
  *******************************************************************************/
 package com.google.research.ic.ferret.data.ext.alogger;
 
+import com.google.research.ic.ferret.Config;
 import com.google.research.ic.ferret.data.Event;
 import com.google.research.ic.ferret.data.SearchEngine;
 import com.google.research.ic.ferret.test.Debug;
@@ -38,7 +39,7 @@ public class AccessibilityLogEvent extends Event
   // these are now superclass members
   //  private String userId = null;
   //  private String deviceId = null;
-  //  private long timeStamp = -1;
+  //  private long timeStamp = -1;  
 
   private int eventType = -1;
   private String wText = null;
@@ -114,6 +115,21 @@ public class AccessibilityLogEvent extends Event
   public static final String TYPE_WINDOW_CONTENT_CHANGED_NAME = "UPDATE";
   public static final String TYPE_WINDOW_STATE_CHANGED_NAME = "POPUP";
 
+  private int[] generousFilterEvents = {
+    TYPE_ANNOUNCEMENT,
+    TYPE_TOUCH_EXPLORATION_GESTURE_END,
+    TYPE_TOUCH_EXPLORATION_GESTURE_START,
+    TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED,
+    TYPE_VIEW_ACCESSIBILITY_FOCUSED,
+    TYPE_WINDOW_CONTENT_CHANGED,
+    TYPE_VIEW_TEXT_TRAVERSED_AT_MOVEMENT_GRANULARITY
+  };
+  
+  private int[] aggressiveFilterEvents = {
+    TYPE_VIEW_FOCUSED,
+    TYPE_VIEW_SCROLLED
+  };
+  
   boolean important = false;
   boolean startCandidate = false;
   boolean stopCandidate = false;
@@ -188,6 +204,7 @@ public class AccessibilityLogEvent extends Event
       return true;
     }
   }
+
 
   @Override
   public HashMap getKeyValuePairs() {
@@ -735,6 +752,7 @@ public class AccessibilityLogEvent extends Event
   public String toString() {
     StringWriter sw = new StringWriter();
     
+    sw.append(getIdentifierId() + "-");
     sw.append(getEventTypeName() + "-");
     sw.append(getwClassName() + "-");
     sw.append(getwText() + "-");
@@ -748,15 +766,22 @@ public class AccessibilityLogEvent extends Event
   }
 
   public boolean isSkippable() {
-    return 
-        eventType == TYPE_ANNOUNCEMENT ||
-        eventType == TYPE_TOUCH_EXPLORATION_GESTURE_END ||
-        eventType == TYPE_TOUCH_EXPLORATION_GESTURE_START ||
-        eventType == TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED ||
-        eventType == TYPE_VIEW_ACCESSIBILITY_FOCUSED ||
-        eventType == TYPE_WINDOW_CONTENT_CHANGED || // not sure we want to leave these out
-        eventType == TYPE_VIEW_TEXT_TRAVERSED_AT_MOVEMENT_GRANULARITY;
+    for (int i = 0; i < generousFilterEvents.length; i++) {
+       if (generousFilterEvents[i] == eventType) {
+         return true;
+       }
+    }
+
+    if (Config.useAggressiveFiltering) {
+      for (int i = 0; i < aggressiveFilterEvents.length; i++) {
+        if (aggressiveFilterEvents[i] == eventType) {
+          return true;
+        }
+     }      
+    }
+    return false;
   }
+  
   /* (non-Javadoc)
    * @see java.lang.Comparable#compareTo(java.lang.Object)
    */

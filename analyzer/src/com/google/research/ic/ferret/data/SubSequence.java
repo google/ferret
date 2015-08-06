@@ -27,17 +27,12 @@ public class SubSequence implements Comparable<SubSequence> {
   private final int endIndex; /** Exclusive */
   private final Snippet snippet;
   private double distance;
-  private double weakDistance;
-  private double compressDistance;
-  private double expansionDistance;
-  private double startDistance;
-  private double endDistance;
-  private double middleDistance;
   
-  public SubSequence(int start, int end, Snippet snippet)  {
+  public SubSequence(int start, int end, Snippet snippet, double distance)  {
     startIndex = start;
     endIndex = end;
     this.snippet = snippet;
+    this.distance = distance;
   }
 
   public List<Event> getEvents() {
@@ -119,9 +114,9 @@ public class SubSequence implements Comparable<SubSequence> {
   
   public String toString() {
     StringWriter sw = new StringWriter();
-    sw.append("SubSequence: " + startIndex + "-" + endIndex);
-    sw.append(", snippet length: " + snippet.getEvents().size());
-    sw.append(", dist: " + distance); 
+    sw.append("subS:" + startIndex + "-" + endIndex);
+    sw.append(",dist: " + distance); 
+    sw.append(",source: " + snippet.getSourceFilename());
     return sw.toString();
   }
 }

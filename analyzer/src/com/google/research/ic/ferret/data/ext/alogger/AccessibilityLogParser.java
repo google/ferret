@@ -19,6 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonElement;
 import com.google.research.ic.ferret.data.Event;
+import com.google.research.ic.ferret.data.LogLoader;
 import com.google.research.ic.ferret.data.Parser;
 import com.google.research.ic.ferret.data.Snippet;
 import com.google.research.ic.ferret.data.attributes.Attribute;
@@ -107,7 +108,7 @@ public class AccessibilityLogParser implements Parser {
       while ((line = br.readLine()) != null) {
         AccessibilityLogEvent alE = null;
         try {
-          alE = gson.fromJson(line.trim(), AccessibilityLogEvent.class);
+          alE = eventFromGsonString(line.trim());
         } catch (Exception e) {
           System.err.println("Choked on line, ignoring: " + line);
           System.err.println(e.getMessage());
@@ -169,7 +170,6 @@ public class AccessibilityLogParser implements Parser {
       if (e.isSkippable()) {
         return null;
       }
-      //Debug.log("event string turned into " + e);
       return e;
     } catch (Exception e) {
       // wasn't a gson string, so not sure what to do
@@ -185,6 +185,7 @@ public class AccessibilityLogParser implements Parser {
   public AccessibilityLogEvent eventFromGsonString(String gsonString) {
     AccessibilityLogEvent alE = gson.fromJson(gsonString, AccessibilityLogEvent.class);
     alE.init();
+    alE.setIdentifierId(LogLoader.getLogLoader().getOrCreateIdentifierId(alE.getIdentifier()));
     return alE;
   }
   

@@ -25,13 +25,13 @@ import java.util.logging.Logger;
  */
 public class Debug {
   
-  public static final String LOG_NAME = "qbdila";
+  public static final String LOG_NAME = "ferret";
   
   public static void log(String m) {
     if (Config.DEBUG) {
       Logger l = Logger.getLogger(LOG_NAME);
-      l.info(m);
       l.setLevel(Level.INFO);
+      l.info(m);
     }
   }
 }

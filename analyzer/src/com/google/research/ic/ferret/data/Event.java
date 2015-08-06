@@ -230,6 +230,9 @@ public abstract class Event {
     return identifier;
   }
   
+  public void setIdentifierId(int id) {
+    this.identifierId = id;
+  }
   public int getIdentifierId() {
     return identifierId;
   }

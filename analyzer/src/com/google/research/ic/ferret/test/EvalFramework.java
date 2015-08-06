@@ -15,6 +15,15 @@
  *******************************************************************************/
 package com.google.research.ic.ferret.test;
 
+import com.google.research.ic.ferret.Config;
+import com.google.research.ic.ferret.data.Event;
+import com.google.research.ic.ferret.data.LogLoader;
+import com.google.research.ic.ferret.data.ResultSet;
+import com.google.research.ic.ferret.data.SearchEngine;
+import com.google.research.ic.ferret.data.Snippet;
+import com.google.research.ic.ferret.data.SubSequence;
+import com.google.research.ic.ferret.data.UberResultSet;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -26,23 +35,21 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 
-import com.google.research.ic.ferret.data.Event;
-import com.google.research.ic.ferret.data.LogLoader;
-import com.google.research.ic.ferret.data.ResultSet;
-import com.google.research.ic.ferret.data.SearchEngine;
-import com.google.research.ic.ferret.data.Snippet;
-import com.google.research.ic.ferret.data.SubSequence;
-import com.google.research.ic.ferret.data.UberResultSet;
-
 public class EvalFramework {
 
-  private static final int NGRAM_SIZE = 3;
+  private static final int NGRAM_SIZE = 2;
   
-  private static Map<String, List<LabeledRegion>> tagMap = new HashMap<String, List<LabeledRegion>>();
-  private static Map<Snippet, List<LabeledRegion>> snippetTagMap = new HashMap<Snippet, List<LabeledRegion>>();
+  private static Map<String, List<LabeledRegion>> logTagToRegionMap = new HashMap<String, List<LabeledRegion>>();
+  private static Map<String, List<LabeledRegion>> queryTagToRegionMap = new HashMap<String, List<LabeledRegion>>();
+  private static Map<Snippet, List<LabeledRegion>> logSnippetToTagMap = new HashMap<Snippet, List<LabeledRegion>>();
+  private static Map<Snippet, List<LabeledRegion>> querySnippetToTagMap = new HashMap<Snippet, List<LabeledRegion>>();
   
   private static final String DEFAULT_LOG_DIR = "../test-data/eval-data";
-  private static String logDirName = DEFAULT_LOG_DIR;
+  
+  private static final String TAGLISTARG = "--tags";
+  private static final String LOGDIRARG = "--logdir";
+  private static final String EXPERTQUERYARG = "--expertdir";
+  private static final String AGGFILTERARG = "--useAggressiveFiltering";
   
   private static float[] avgPrecisions = new float[41];
   private static float[] avgRecalls = new float[41];
@@ -52,6 +59,9 @@ public class EvalFramework {
     public String tagGroupName = null;
     public float prec = -0.1f;
     public float rec = -0.1f;
+    public int fn = -1;
+    public int tp = -1;
+    public int fp = -1;
     public List<String> closeMatches = null;
     public List<String> weakMatches = null;
     public List<String> elongMatches = null;
@@ -69,21 +79,46 @@ public class EvalFramework {
   private static List<TagInstanceResult> tagInstanceResults = new ArrayList<TagInstanceResult>();
   
   public static void main(String[] args) {
-    doEval();
+    String[] tagIDs = null;
+    String logDirName = DEFAULT_LOG_DIR;
+    String expertQueryDirName = null;
+    Config.DEBUG = false;
+    for (String s : args) {
+      if (s.equals(Config.DEBUGARG)) {
+        Config.DEBUG = true;
+      }
+      if (s.startsWith(TAGLISTARG)) {
+        String[] argParts = s.split("=");
+        tagIDs = argParts[1].split(",");
+      }
+      if (s.startsWith(LOGDIRARG)) {
+        String[] argParts = s.split("=");
+        logDirName = argParts[1];
+      }
+      if (s.startsWith(EXPERTQUERYARG)) {
+        String[] argParts = s.split("=");
+        expertQueryDirName = argParts[1];        
+      }
+      if (s.startsWith(AGGFILTERARG)) {
+        Config.useAggressiveFiltering = true;
+      }
+    }
+    doEval(tagIDs, logDirName, expertQueryDirName);
   } 
   
-  public static void doEval() {
+  public static void doEval(String[] tagIDs, String logDirName, String expertQueryDirName) {
 
     LogLoader logLoader = LogLoader.getLogLoader();
     List<Snippet> logs = new ArrayList<Snippet>();
-    
+    List<Snippet> queries = new ArrayList<Snippet>();
+    boolean crossVal = (expertQueryDirName == null);
     File logDir = new File(logDirName);
     for (File file : logDir.listFiles()) {
       if (file.getName().endsWith(".log")) {
-        System.out.println("Loading log " + file.getAbsolutePath());
+        Debug.log("Loading log " + file.getAbsolutePath());
         Snippet s = logLoader.loadLogFile(file.getAbsolutePath()).get(0);
-        System.out.println("Finished loading log" + file.getAbsolutePath());
-        
+        Debug.log("Finished loading log" + file.getAbsolutePath());
+
         logs.add(s);
         long markerTime = getMarkerTime(s);
         for (File file2 : logDir.listFiles()) {
@@ -92,184 +127,220 @@ public class EvalFramework {
             List<Tag> tags = processTagList(file2);
             List<LabeledRegion> regions = associateTags(tags, s);
             // Debugging
+
+            Debug.log("Processed file: " + file2);
+            Debug.log("\tTags found are: " + tags);
+            Debug.log("\tLabeledRegions are: " + regions);
+
+            logSnippetToTagMap.put(s, regions);
             
-            System.out.println("Processed file: " + file2);
-            System.out.println("\tTags found are: " + tags);
-            System.out.println("\tLabeledRegions are: " + regions);
-            
-            snippetTagMap.put(s, regions);
             for (LabeledRegion lr : regions) {
               String lbl = lr.tag.label;
-              List<LabeledRegion> rList = tagMap.get(lbl);
+              List<LabeledRegion> rList = logTagToRegionMap.get(lbl);
               if (rList == null) {
                 rList = new ArrayList<LabeledRegion>();
               }
               rList.add(lr);
-              tagMap.put(lbl, rList);
-              System.out.println("\t\tUpdated mapping for " + lbl + " to " + rList);
+              logTagToRegionMap.put(lbl, rList);
+              Debug.log("\t\tUpdated mapping for " + lbl + " to " + rList);
             }            
           }
         }
       }
+    } // end processing of tags for logs
+
+    if (expertQueryDirName == null) {
+      expertQueryDirName = logDirName;
     }
 
-    System.out.println("\\\\\\\\\\\\\\\\\\");
-    System.out.println("\\\\\\\\\\\\\\\\\\");
-    System.out.println("\\\\\\\\\\\\\\\\\\");
-    
-    SearchEngine.getSearchEngine().indexLogs(logs, NGRAM_SIZE);
-    
-    Set<String> tagLabels = tagMap.keySet();
-    List<String> tagsToAnalyze = new ArrayList<String>();
-    List<String> sortedTagLabels = Arrays.asList(tagLabels.toArray(new String[0]));
-    Collections.sort(sortedTagLabels);
-    float aggPrecSum = 0.0f;
-    float aggRecSum = 0.0f;
-    int numTagsProcessed = 0;
-    int tagNum = 0;
-    
-    
-    for (String lbl : sortedTagLabels) {
-      try {
-        tagNum = Integer.parseInt(lbl);
-      } catch (Exception e) { 
-        if (lbl.startsWith("x")) {
-          continue;
-        }
-        if (lbl.startsWith("a")) {
-          tagNum = 35;
-        } else if (lbl.startsWith("b")) {
-          tagNum = 36;
-        } else if (lbl.startsWith("c")) {
-          tagNum = 37;
-        } else if (lbl.startsWith("d")) {
-          tagNum = 38;
-        } else if (lbl.startsWith("e")) {
-          tagNum = 39;
-        } else if (lbl.startsWith("f")) {
-          tagNum = 40;
+    File expertDir = new File(expertQueryDirName);
+    for (File file : expertDir.listFiles()) {
+      if (file.getName().endsWith(".log")) {
+        Debug.log("Loading log " + file.getAbsolutePath());
+        Snippet s = logLoader.loadLogFile(file.getAbsolutePath()).get(0);
+        Debug.log("Finished loading log" + file.getAbsolutePath());
+
+        queries.add(s);
+        long markerTime = getMarkerTime(s);
+        for (File file2 : expertDir.listFiles()) {
+          if (file2.getName().endsWith(".tag") && 
+              file2.getName().split("\\.")[0].equals(file.getName().split("\\.")[0])) {
+            List<Tag> tags = processTagList(file2);
+            List<LabeledRegion> regions = associateTags(tags, s);
+            // Debugging
+
+            Debug.log("Processed file: " + file2);
+            Debug.log("\tTags found are: " + tags);
+            Debug.log("\tLabeledRegions are: " + regions);
+
+            querySnippetToTagMap.put(s, regions);
+            for (LabeledRegion lr : regions) {
+              String lbl = lr.tag.label;
+              List<LabeledRegion> rList = queryTagToRegionMap.get(lbl);
+              if (rList == null) {
+                rList = new ArrayList<LabeledRegion>();
+              }
+              rList.add(lr);
+              queryTagToRegionMap.put(lbl, rList);
+              Debug.log("\t\tUpdated mapping for " + lbl + " to " + rList);
+            }            
+          }
         }
       }
-      
-      numTagsProcessed++;
-      System.out.println("\n****** Computing results for tag: " + lbl + " *******\n");
+    } // end processing of tags for queries
 
-      float precSum = 0.0f;
-      float recSum = 0.0f;
-      
-      // find all instances of a specified tag within the data
-      List<LabeledRegion> tagRegions = tagMap.get(lbl);
-      System.out.println("Tag instances (" + tagRegions.size() + "): " + tagRegions);
+    System.out.println("Finished loading queries, queryTagToRegionMap looks like this: ");
+    for (String tag : queryTagToRegionMap.keySet()) {
+      for (LabeledRegion lr : queryTagToRegionMap.get(tag)) {
+        System.out.println(lr);
+      }
+    }
 
-      for (LabeledRegion lr : tagRegions) {
-        TagInstanceResult tiResult = new TagInstanceResult();
-        tiResult.tagInstanceName = lr.toString();
-        tiResult.tagGroupName = lbl;
-        float prec = 0.0f;
-        float rec = 0.0f;
-        System.out.println("\nGetting Results for " + lr);
-        //printLabeledRegion(lr);
-        Snippet query = lr.getRegionSnippet();
-        long t = System.currentTimeMillis();
-        UberResultSet urs = SearchEngine.getSearchEngine().findMatches(query);
-        tiResult.searchTime = System.currentTimeMillis() - t;
-        ResultSet closeMatches = urs.getStrongMatches();
-        ResultSet weakMatches = urs.getWeakMatches();
-        ResultSet elongMatches = urs.getElongatedMatches();
-        ResultSet altEndingMatches = urs.getAltEndingMatches();
-        
-        List<LabeledRegion> resultRegions = null;
-        if (closeMatches != null) {
-          resultRegions = getResultRegions(closeMatches);
-          for (LabeledRegion rr : resultRegions) {
-            tiResult.closeMatches.add(rr.toString());
+    SearchEngine.getSearchEngine().indexLogs(logs, NGRAM_SIZE);
+
+    Set<String> tagLabels = logTagToRegionMap.keySet();
+    List<String> sortedTagLabels = Arrays.asList(tagLabels.toArray(new String[0]));
+    Collections.sort(sortedTagLabels);
+    int tagNum = 0;
+
+    for (String lbl : sortedTagLabels) {
+      if (tagIDs == null || tagIDs[0].equals("all") || Arrays.asList(tagIDs).contains(lbl)) {
+        try {
+          tagNum = Integer.parseInt(lbl);
+        } catch (Exception e) { 
+          if (lbl.startsWith("x")) {
+            continue;
           }
-          //System.out.println("Close-matching regions are: " + resultRegions);
-          int tp = 0;
-          int fp = 0;
-          boolean foundSelf = false;
-          for (LabeledRegion r : resultRegions) {      
-            if (r.sourceSnippet.getSourceFilename().equals(lr.sourceSnippet.getSourceFilename())) {
-              foundSelf = true;
-            } else if (r.tag.label.equals(lbl)) {
-              tp++;
-            } else {
-              fp++;
+          if (lbl.startsWith("a")) {
+            tagNum = 35;
+          } else if (lbl.startsWith("b")) {
+            tagNum = 36;
+          } else if (lbl.startsWith("c")) {
+            tagNum = 37;
+          } else if (lbl.startsWith("d")) {
+            tagNum = 38;
+          } else if (lbl.startsWith("e")) {
+            tagNum = 39;
+          } else if (lbl.startsWith("f")) {
+            tagNum = 40;
+          }
+        }
+
+        Debug.log("\n****** Computing results for tag: " + lbl + " *******\n");
+
+        float precSum = 0.0f;
+        float recSum = 0.0f;
+
+        // find all instances of a specified tag within the query source
+        List<LabeledRegion> queryTagRegions = queryTagToRegionMap.get(lbl);
+
+        for (LabeledRegion lr : queryTagRegions) {
+          TagInstanceResult tiResult = new TagInstanceResult();
+          tiResult.tagInstanceName = lr.toString();
+          tiResult.tagGroupName = lbl;
+          float prec = 0.0f;
+          float rec = 0.0f;
+          Snippet query = lr.getRegionSnippet();
+          long t = System.currentTimeMillis();
+          UberResultSet urs = SearchEngine.getSearchEngine().findMatches(query);
+          tiResult.searchTime = System.currentTimeMillis() - t;
+          ResultSet closeMatches = urs.getStrongMatches();
+          ResultSet weakMatches = urs.getWeakMatches();
+          ResultSet elongMatches = urs.getElongatedMatches();
+          ResultSet altEndingMatches = urs.getAltEndingMatches();
+
+          List<ResultRegion> resultRegions = null;
+          if (closeMatches != null) {
+            resultRegions = getResultRegions(closeMatches);
+            for (LabeledRegion rr : resultRegions) {
+              tiResult.closeMatches.add(rr.toString());
             }
+            //System.out.println("Close-matching regions are: " + resultRegions);
+            int tp = 0;
+            int fp = 0;
+            boolean foundSelf = false;
+            for (LabeledRegion r : resultRegions) {      
+              if (r.sourceSnippet.getSourceFilename().equals(lr.sourceSnippet.getSourceFilename())) {
+                foundSelf = true;
+              } else if (r.tag.label.equals(lbl)) {
+                tp++;
+              } else {
+                fp++;
+              }
+            }
+            if(!foundSelf && crossVal){
+              System.out.println("WARNING: " + lr + " did not find itself");
+            }
+            int expectedFinds = logTagToRegionMap.get(lbl).size();
+            int fn = expectedFinds - tp; 
+            prec = ((float)tp/(tp+fp));
+            rec = ((float)tp/expectedFinds); 
+            if (Float.isNaN(prec)) prec = 0.0f;
+            if (Float.isNaN(rec)) rec = 0.0f;
+            tiResult.prec = prec;
+            tiResult.rec = rec;
+            tiResult.fn = fn;
+            tiResult.fp = fp;
+            tiResult.tp = tp;
+            precSum += prec; // sums used to calculate avg prec & rec for a Tag
+            recSum += rec;
+            //System.out.println("tp: " + tp + ", fp: " + fp  + ", fn: " + fn + ", prec: " + prec + ", rec: " + rec);
+          } else {
+            //System.out.println("There were no close matches");
+            tiResult.prec = Float.NaN;
+            tiResult.rec = Float.NaN;
           }
-          if(!foundSelf){
-            System.out.println(lr + " did not find itself");
+          if (weakMatches != null) {
+            resultRegions = getResultRegions(weakMatches);
+            for (LabeledRegion rr : resultRegions) {
+              tiResult.weakMatches.add(rr.toString());
+            }
+            //System.out.println("Weak-matching regions are: " + resultRegions);   
+          } else {
+            //System.out.println("There were no weak matches");
           }
-          int fn = tagRegions.size() - tp - 1; // account for self
-          prec = ((float)tp/(tp+fp));
-          rec = ((float)tp/(tagRegions.size() - 1)); // account for self
-          if (Float.isNaN(prec)) prec = 0.0f;
-          if (Float.isNaN(rec)) rec = 0.0f;
-          tiResult.prec = prec;
-          tiResult.rec = rec;
+          if (elongMatches != null) {
+            resultRegions = getResultRegions(elongMatches);
+            for (LabeledRegion rr : resultRegions) {
+              tiResult.elongMatches.add(rr.toString());
+            }
+          } else {
+            //System.out.println("There were no weak matches");
+          }
+          if (altEndingMatches != null) {
+            resultRegions = getResultRegions(altEndingMatches);
+            for (LabeledRegion rr : resultRegions) {
+              tiResult.altEndMatches.add(rr.toString());
+            }
+          } else {
+            //System.out.println("There were no weak matches");
+          }
 
-          precSum += prec; // sums used to calculate avg prec & rec for a Tag
-          recSum += rec;
-          //System.out.println("tp: " + tp + ", fp: " + fp  + ", fn: " + fn + ", prec: " + prec + ", rec: " + rec);
-        } else {
-          //System.out.println("There were no close matches");
-          tiResult.prec = Float.NaN;
-          tiResult.rec = Float.NaN;
-        }
-        if (weakMatches != null) {
-          resultRegions = getResultRegions(weakMatches);
-          for (LabeledRegion rr : resultRegions) {
-            tiResult.weakMatches.add(rr.toString());
-          }
-          //System.out.println("Weak-matching regions are: " + resultRegions);   
-        } else {
-          //System.out.println("There were no weak matches");
-        }
-        if (elongMatches != null) {
-          resultRegions = getResultRegions(elongMatches);
-          for (LabeledRegion rr : resultRegions) {
-            tiResult.elongMatches.add(rr.toString());
-          }
-        } else {
-          //System.out.println("There were no weak matches");
-        }
-        if (altEndingMatches != null) {
-          resultRegions = getResultRegions(altEndingMatches);
-          for (LabeledRegion rr : resultRegions) {
-            tiResult.altEndMatches.add(rr.toString());
-          }
-        } else {
-          //System.out.println("There were no weak matches");
-        }
+          tagInstanceResults.add(tiResult);
+        } // end processing tag instance
 
-        tagInstanceResults.add(tiResult);
-      } // end processing tag instance
-      
-      aggPrecSum += precSum;
-      aggRecSum += recSum;
+        avgPrecisions[tagNum] = precSum/queryTagRegions.size();
+        avgRecalls[tagNum] = recSum/queryTagRegions.size();
 
-      avgPrecisions[tagNum] = precSum/tagRegions.size();
-      avgRecalls[tagNum] = recSum/tagRegions.size();
-
-      //System.out.println("avg prec: " + precSum/tagRegions.size() + ", avg rec: " + recSum/tagRegions.size());
-      //System.out.println("\n*************************\n");
-    } // end processing tag group
-    
+      } // end processing tag group
+    }
     System.out.println("Instance Results: ");
-    System.out.println("\ttag-grp \ttag-inst \tprec \trec \tsearch-time \tclose-matches \tweak-matches \telongations \talt-endings");
+    System.out.println("\ttag \tstag-inst                    " +
+        "\tprec \trec \ttp \tfp \tfn \ttime(ms) \tclose-matches \tweak-matches \telongations \talt-endings");
     for (TagInstanceResult tiResult: tagInstanceResults) {
-      System.out.printf("\t%s \t%s \t%.2f \t%.2f \t%d \t%s \t%s \t%s \t%s\n", 
+      System.out.printf("\t%s \t%-30s \t%.2f \t%.2f \t%d \t%d \t%d \t%d \t%s \t%s \t%s \t%s\n", 
           tiResult.tagGroupName,tiResult.tagInstanceName, tiResult.prec, tiResult.rec, 
+          tiResult.tp, tiResult.fp, tiResult.fn,
           tiResult.searchTime, tiResult.closeMatches, tiResult.weakMatches,
           tiResult.elongMatches, tiResult.altEndMatches);
     }
-    
-    System.out.println("tag\t\tprec\t\trec");
-    for (int i = 0; i < avgPrecisions.length; i++) {
-      System.out.printf("%d \t %.2f \t %.2f\n", i, avgPrecisions[i],  avgRecalls[i]); 
+    if (crossVal) {
+      System.out.println("Tag Group Results:  ");
+      System.out.println("tag\t\tprec\t\trec");
+      for (int i = 0; i < tagIDs.length + 1; i++) {
+        System.out.printf("%d \t %.2f \t %.2f\n", i, avgPrecisions[i],  avgRecalls[i]); 
+      }
     }
-    System.out.println("\nAGGREGATE PRECSION: " + aggPrecSum / numTagsProcessed);
-    System.out.println("AGGREGATE RECALL: " + aggRecSum / numTagsProcessed);
   }
 
   public static List<Tag> processTagList(File tagFile) {
@@ -349,14 +420,13 @@ public class EvalFramework {
     long offset = 0;
     
     for (Tag tag : tags) {
-      System.out.println("Look at tag: " + tag);
       for ( ; logIndex < logSnippet.size(); logIndex++) {
         Event e = logSnippet.getEvents().get(logIndex);
         if (tag.label.contains("sync")) {
           String wText = e.getKeyValuePairs().get("wText");
           if (wText != null && wText.startsWith("Start Session")) {
             offset = e.getTimeStamp() - tag.startTime;
-            System.out.println("Found start event: " + e.getTimeStamp() + ", compared to sync tag: " 
+            Debug.log("Found start event: " + e.getTimeStamp() + ", compared to sync tag: " 
                 + tag.startTime + ", offset = " + offset);
             break;
           } else {
@@ -428,7 +498,7 @@ public class EvalFramework {
     List<Tag> tags = new ArrayList<Tag> ();
     for (SubSequence subS : rs.getResults()) {
       Snippet sourceSnippet = subS.getSnippet();
-      List<LabeledRegion> regionsInSnippet = snippetTagMap.get(sourceSnippet);
+      List<LabeledRegion> regionsInSnippet = logSnippetToTagMap.get(sourceSnippet);
       Collections.sort(regionsInSnippet);
       for (LabeledRegion reg : regionsInSnippet) {
         if ((subS.getStartIndex() >= reg.startIndex && subS.getStartIndex() < reg.endIndex) ||
@@ -440,18 +510,28 @@ public class EvalFramework {
     return tags;
   }
   
-  public static List<LabeledRegion> getResultRegions(ResultSet rs) {
-    List<LabeledRegion> regions = new ArrayList<LabeledRegion> ();
+  public static List<ResultRegion> getResultRegions(ResultSet rs) {
+    List<ResultRegion> regions = new ArrayList<ResultRegion> ();
     for (SubSequence subS : rs.getResults()) {
+      Debug.log("Examining result " + subS);
       Snippet sourceSnippet = subS.getSnippet();
-      List<LabeledRegion> regionsInSnippet = snippetTagMap.get(sourceSnippet);
+      List<LabeledRegion> regionsInSnippet = logSnippetToTagMap.get(sourceSnippet);
       Collections.sort(regionsInSnippet);
+      boolean matchFound = false;
       for (LabeledRegion reg : regionsInSnippet) {
         if ((subS.getStartIndex() >= reg.startIndex && subS.getStartIndex() < reg.endIndex) ||
-            (subS.getEndIndex() > reg.startIndex && subS.getEndIndex() < reg.endIndex)) {
-          regions.add(reg); // this would allow more than one tag per result, potentially
+            (subS.getEndIndex() > reg.startIndex && subS.getEndIndex() <= reg.endIndex) ||
+            (subS.getStartIndex() + subS.getLength() / 2 >= reg.startIndex &&
+            subS.getStartIndex() + subS.getLength() / 2 <= reg.endIndex)) {
+          ResultRegion rReg = new ResultRegion(reg, subS);
+          regions.add(rReg); // this would allow more than one tag per result, potentially
+          Debug.log("Added ResultRegion: " + rReg);
+          matchFound = true;
         }
-      }      
+      }  
+      if (!matchFound) {
+        Debug.log("No matching LabeledRegion found for " + subS);
+      }
     }
     return regions;
   }

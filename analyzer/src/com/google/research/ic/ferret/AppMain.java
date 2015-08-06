@@ -32,15 +32,15 @@ import java.util.List;
 
 public class AppMain {
 
+  public static final String ARG_LOGDIR = "--logdir=";
+  public static final String ARG_LOGTYPE = "--logtype=";
+  public static final String ARG_LOGTYPE_ACCESSIBILITY = "accessibility";
+
+  public static final String ARG_LOADDEMOS = "--loaddemos";
   public static final String ARG_DONTLOAD = "--dontload";
   public static final String ARG_DONTINDEX = "--dontindex";
   public static final String ARG_NODEVICESERVER = "--nodeviceserver";
   public static final String ARG_NOUISERVER = "--nouiserver";
-  public static final String ARG_LOGDIR = "--logdir=";
-  public static final String ARG_LOADDEMOS = "--loaddemos";
-  public static final String ARG_LOGTYPE = "--logtype=";
-  public static final String ARG_LOGTYPE_ACCESSIBILITY = "accessibility";
-  public static final String ARG_EXTRACT_QUERIES = "--extract-queries";
   
     /**
    * For starting the application in "headless" mode
@@ -50,7 +50,7 @@ public class AppMain {
     
     List<String> argList = Arrays.asList(args);
 
-    Debug.log("Ferret started with args: " + argList + " of length " + argList.size());
+    Config.DEBUG = false;
 
     for (String a : argList) {
       if (a.startsWith(ARG_LOGTYPE)) {
@@ -64,7 +64,10 @@ public class AppMain {
         }
       }
     }
-    
+
+    if (argList.contains(Config.DEBUGARG)) {
+      Config.DEBUG = true;
+    }
     
     if (!argList.contains(ARG_NODEVICESERVER)) {
       Debug.log("Starting device server...");
@@ -118,38 +121,6 @@ public class AppMain {
       
     }
 
-    // extract some random queries
-    
-//    if (argList.contains(ARG_EXTRACT_QUERIES) && 
-//        LogLoader.getLogLoader().getLogType().equals(LogLoader.REFLECTION_LOG)) {
-//      
-//      ArrayList<Snippet> logSnippets = SearchEngine.getSearchEngine().getLogSnippets();
-//      for (int i = 0; i < 10; i++) {
-//        int logID = (int) Math.floor(Math.random() * logSnippets.size());
-//        int snipSize = 10 + (int) Math.floor(Math.random() * 40); // 10-50
-//        Snippet logSnippet = logSnippets.get(logID);
-//        int snipStart = -1;
-//        if (snipSize <= logSnippet.getEvents().size()) {
-//          snipStart = (int) Math.floor(Math.random() * 
-//            (logSnippet.getEvents().size() - snipSize));
-//        } else {
-//          snipStart = 0;
-//          snipSize = logSnippet.getEvents().size();
-//
-//        }
-//        Debug.log("Creating snippet frm Log" + logID + "[" + snipStart + "-" + 
-//            (snipStart + snipSize - 1) + "], Log size is " + logSnippet.getEvents().size() + 
-//            ", snipSize is " + snipSize);
-//
-//        SubSequence subS = new SubSequence(snipStart, snipStart + snipSize - 1, logSnippet);
-//        
-//        Snippet sampleQuery = subS.getSubSnippet();
-//        File file = new File(ReflectionLogParser.DEFAULT_LOG_DIRECTORY, "query" + i + ".db");
-//        ReflectionLogParser.getParser().writeSnippet(sampleQuery, file);
-//        Debug.log("Wrote snippet Log" + logID + "[" + snipStart + "-" + 
-//            (snipStart + snipSize - 1) + "] to " + file.toString());
-//      }
-//    }
     Debug.log("Server initialized. Ready for action.");
     
     String os = System.getProperty("os.name");
