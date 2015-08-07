@@ -93,7 +93,7 @@ import java.util.Map;
     synchronized(events) {
       events.add(event);
     }
-    if (Config.DEBUG) {
+    if (Config.debug) {
 //      if (event.getTimeStamp() > latestTime) {
 //        latestTime = event.getTimeStamp();
 //        Debug.log("Latest time is now " + latestTime);

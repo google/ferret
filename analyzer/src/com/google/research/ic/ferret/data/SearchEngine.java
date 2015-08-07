@@ -15,10 +15,12 @@
  *******************************************************************************/
 package com.google.research.ic.ferret.data;
 
+import com.google.research.ic.ferret.Config;
 import com.google.research.ic.ferret.test.Debug;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,13 +33,7 @@ public class SearchEngine {
   private HashMap<String, Integer> identifierIds = new HashMap<String, Integer>();
   private ArrayList<Integer> nGramLengthsInUse = new ArrayList<Integer>();
   
-  
-  // Algorithm parameters
-  private double nGramDensity = 0.2; // how many ngrams must be found for a region to be considered a candidate?
-  private double admittanceThreshold = 0.45; // for all algorithms
-  private int elongationFactor = 6; // multiples of query length, for finding elongations
-  private double fractionToMatch = 0.25; // fraction of the query to match, for finding alternate endings
-  
+    
   /** inner class definitions */
   private static class LocatedNGram implements Comparable<LocatedNGram> {
     public String nGramId = null;
@@ -49,10 +45,12 @@ public class SearchEngine {
       this.nGramCount = nGramCount;
     }
     
+    @Override
     public int compareTo(LocatedNGram that) {
       return this.location - ((LocatedNGram) that).location;
     }
     
+    @Override
     public String toString() {
       return "LocatedNGram[location:" + location + "]"; 
     }
@@ -63,6 +61,7 @@ public class SearchEngine {
     public List<CandidateLocatedNGram> elongationCandidates = new ArrayList<CandidateLocatedNGram>();
     public List<CandidateLocatedNGram> altEndingCandidates = new ArrayList<CandidateLocatedNGram>();
 
+    @Override
     public String toString() {
       StringBuffer sb = new StringBuffer();
       sb.append("CandidateCollector");
@@ -83,6 +82,7 @@ public class SearchEngine {
       this.nGramDensity = nGramDensity;
       this.sizeToCompare= sizeToCompare;
     }
+    @Override
     public String toString() {
       return "CandidateLocatedNGram[location:" + location + ",density:" + nGramDensity + "]"; 
     }
@@ -94,6 +94,7 @@ public class SearchEngine {
     public int endIndex = -1;
     public List<LocatedNGram> locatedNGrams = new ArrayList<LocatedNGram>();
 
+    @Override
     public String toString() {
       return "NHood[" + startIndex + "-" + endIndex + "],size=" + locatedNGrams.size();
     }
@@ -106,6 +107,7 @@ public class SearchEngine {
     public List<Neighborhood> elongationNeighborhoods = new ArrayList<Neighborhood>();
     public List<Neighborhood> altEndingNeighborhoods = new ArrayList<Neighborhood>();
     
+    @Override
     public String toString() {
       StringBuffer sb = new StringBuffer();
       sb.append("NeighborhoodCollector");
@@ -125,6 +127,7 @@ public class SearchEngine {
       weightedDistance = dist;
     }
     
+    @Override
     public String toString() {
       return "PLoc[loc:" + location + ",dist:" + weightedDistance + "]";
     }
@@ -135,6 +138,7 @@ public class SearchEngine {
     public List<PromotedLocation> elongationFinalCut = new ArrayList<PromotedLocation>();
     public List<PromotedLocation> altEndingFinalCut = new ArrayList<PromotedLocation>();
 
+    @Override
     public String toString() {
       StringBuffer sb = new StringBuffer();
       sb.append("PromotionCollector");
@@ -161,6 +165,7 @@ public class SearchEngine {
   
   public void clearIndex() {
     indexedLogs.clear();
+    nGramLengthsInUse.clear();
   }
   
   public void indexLogs(List<Snippet> logs, int nGramLength) {
@@ -275,6 +280,7 @@ public class SearchEngine {
         PromotionCollector promColl = electNeighborhoodRepresentatives(neighColl, query, log, queryNGramLocations);
         Debug.log("Promotions: " + promColl.toString());
         urs.mergeResults(admitResults(promColl, query, log));
+        pruneResults(urs);
       }
     }
     return urs;
@@ -292,8 +298,8 @@ public class SearchEngine {
       int elongNGramCount = 0;
       int altEndNGramCount = 0;
 
-      int elongationLength = querySize * elongationFactor; 
-      int altEndLength = (int) Math.ceil(querySize * fractionToMatch + 1);
+      int elongationLength = querySize * Config.elongationFactor; 
+      int altEndLength = (int) Math.ceil(querySize * Config.fractionToMatch + 1);
       
       for (int j = i + 1; j < locatedNGrams.size(); j++) {
         LocatedNGram upstreamLNG = locatedNGrams.get(j);
@@ -318,13 +324,13 @@ public class SearchEngine {
       double elongDensity = (double) elongNGramCount / (double) elongationLength;
       double altEndDensity = (double) altEndNGramCount / (double) altEndLength;
 
-      if (strongDensity >= nGramDensity) {
+      if (strongDensity >= Config.nGramDensity) {
         collector.strongMatchCandidates.add(new CandidateLocatedNGram(thisLNG, strongDensity, querySize));
       }
-      if (elongDensity >= nGramDensity) {
+      if (elongDensity >= Config.nGramDensity) {
         collector.elongationCandidates.add(new CandidateLocatedNGram(thisLNG, elongDensity, elongationLength));
       }
-      if (altEndDensity >= nGramDensity) {
+      if (altEndDensity >= Config.nGramDensity) {
         collector.altEndingCandidates.add(new CandidateLocatedNGram(thisLNG, altEndDensity, altEndLength));
       }
     }
@@ -358,7 +364,7 @@ public class SearchEngine {
     
     currentNeighborhood = null;
     
-    int altEndSize = (int) Math.ceil(querySize * fractionToMatch);
+    int altEndSize = (int) Math.ceil(querySize * Config.fractionToMatch);
     for (int i = 0; i < canColl.altEndingCandidates.size(); i++) {
       LocatedNGram thisLNG = canColl.altEndingCandidates.get(i);
       if (currentNeighborhood != null && 
@@ -380,7 +386,7 @@ public class SearchEngine {
     
     currentNeighborhood = null;
     
-    int elongSize = querySize * elongationFactor;
+    int elongSize = querySize * Config.elongationFactor;
     for (int i = 0; i < canColl.elongationCandidates.size(); i++) {
       LocatedNGram thisLNG = canColl.elongationCandidates.get(i);
       if (currentNeighborhood != null && 
@@ -436,7 +442,7 @@ public class SearchEngine {
       collector.strongMatchFinalCut.add(pl);
     }
 
-    int elongSize = query.size() * elongationFactor;
+    int elongSize = query.size() * Config.elongationFactor;
     offset = elongSize / 2;
 
     for (Neighborhood nHood : nCollector.elongationNeighborhoods) {
@@ -481,7 +487,7 @@ public class SearchEngine {
       collector.elongationFinalCut.add(pl);
     }
     
-    int altEndSize = (int) Math.ceil(query.size() * fractionToMatch);
+    int altEndSize = (int) Math.ceil(query.size() * Config.fractionToMatch);
     offset = altEndSize / 2;
     for (Neighborhood nHood : nCollector.altEndingNeighborhoods) {
 
@@ -506,7 +512,7 @@ public class SearchEngine {
         double normalizedWideDist = (double) wideDist / (double) (query.size() - altEndSize);
         double normalizedEndDist = (double) endDist / (double) altEndSize;
 
-        if (normalizedEndDist > admittanceThreshold) { // screen out ones where the end matches too well
+        if (normalizedEndDist > Config.admittanceThreshold) { // screen out ones where the end matches too well
           double minNWDist = Math.min(normalizedNarrowDist, normalizedWideDist);
           if (minNWDist < minDist) {
             minDist = minNWDist;
@@ -533,7 +539,7 @@ public class SearchEngine {
     for (PromotedLocation pl : strongMatchPromotions) {
       int endIndex = Math.min(pl.location + query.size(), log.size());
       SubSequence subS = new SubSequence(pl.location, endIndex, log, pl.weightedDistance);
-      if (pl.weightedDistance <= admittanceThreshold) {
+      if (pl.weightedDistance <= Config.admittanceThreshold) {
         strongMatchResultSequences.add(subS);
       } else {
         weakMatchResultSequences.add(subS);
@@ -543,11 +549,11 @@ public class SearchEngine {
     urs.setWeakMatches(new ResultSet(weakMatchResultSequences, query));
     
     List<PromotedLocation> elongationPromotions = promColl.elongationFinalCut;
-    int elongSize = query.size() * elongationFactor;
+    int elongSize = query.size() * Config.elongationFactor;
     for (PromotedLocation pl : elongationPromotions) {
       int endIndex = Math.min(pl.location + elongSize, log.size());
       SubSequence subS = new SubSequence(pl.location, endIndex, log, pl.weightedDistance); 
-      if (pl.weightedDistance <= admittanceThreshold) {
+      if (pl.weightedDistance <= Config.admittanceThreshold) {
         elongationResultSequences.add(subS);
       } 
     }
@@ -557,7 +563,7 @@ public class SearchEngine {
     for (PromotedLocation pl : altEndingPromotions) {
       int endIndex = Math.min(pl.location + query.size(), log.size());
       SubSequence subS = new SubSequence(pl.location, endIndex, log, pl.weightedDistance); 
-      if (pl.weightedDistance <= admittanceThreshold) {
+      if (pl.weightedDistance <= Config.admittanceThreshold) {
         altEndingResultSequences.add(subS);
       } 
     }
@@ -565,6 +571,65 @@ public class SearchEngine {
     
     //TODO: PRUNING!!
     return urs;
+  }
+  
+  public void pruneResults(UberResultSet urs) {
+    //TODO: Prune other results sets. Also, prune across result sets 
+    // (e.g., prune elongations that also appear as Strong Results
+    ResultSet rs = urs.getStrongMatches();
+    List<SubSequence> strongResults = urs.getStrongMatches().getResults();
+    List<SubSequence> weakResults = urs.getWeakMatches().getResults();
+    
+    Collections.sort(strongResults, new Comparator<SubSequence> () {
+      @Override
+      public int compare(SubSequence a, SubSequence b) {
+        return a.getStartIndex() - b.getStartIndex();        
+      }
+    });
+
+    Map<SubSequence, List<SubSequence>> seqToGroupMap = 
+        new HashMap<SubSequence, List<SubSequence>>();
+    for(int i = 0; i < strongResults.size(); i++) {
+      SubSequence subS = strongResults.get(i);
+      for(int j = i + 1; j < strongResults.size(); j++) {
+        SubSequence subS2 = strongResults.get(j);
+        if (subS.getSnippet().equals(subS2.getSnippet()) && 
+            subS2.getStartIndex() >= subS.getStartIndex() &&
+            subS2.getStartIndex() < subS.getEndIndex()) {
+          Debug.log("Found overlap between " + subS + " and " + subS2 );
+          List<SubSequence> overlapGroup = seqToGroupMap.get(subS);
+          Debug.log("Found overlapGroup " + overlapGroup);
+          if (overlapGroup == null) {
+            overlapGroup = new ArrayList<SubSequence>();
+            overlapGroup.add(subS);
+            seqToGroupMap.put(subS, overlapGroup);
+            Debug.log("Created overlapGroup " + overlapGroup);
+          }
+          if (!overlapGroup.contains(subS2)) {
+            overlapGroup.add(subS2);
+            seqToGroupMap.put(subS2, overlapGroup);
+            Debug.log("Added " + subS2 + " to overlapGroup, which is now " + overlapGroup);
+          } else {
+            Debug.log("overlapGroup alread contains " + subS2);
+          }
+        }
+      }
+    }
+    
+    for (List<SubSequence> overlapGroup : seqToGroupMap.values()) {
+      double minDist = Double.MAX_VALUE;
+      SubSequence bestSeq = null;
+      for (SubSequence seq : overlapGroup) {
+        if (seq.getDistance() < minDist) {
+          minDist = seq.getDistance();
+          bestSeq = seq;
+          Debug.log("Removed " + seq + " from result set. Now looks like: " + urs.getStrongMatches().getResults());
+        }
+        urs.getStrongMatches().getResults().remove(seq); // remove them all
+      }
+      urs.getStrongMatches().getResults().add(bestSeq); // add the best one back in
+      Debug.log("Added " + bestSeq + " back to result set. Now looks like: " + urs.getStrongMatches().getResults());
+    }
   }
   
   public void testMatchedLocations(Snippet query, Snippet log, List<Integer> matchedLocations, int nGramLength, UberResultSet urs) {
@@ -670,7 +735,7 @@ public class SearchEngine {
    * @param log
    * @param startIndex is inclusive
    * @param endIndex is exclusive
-   * @return
+   * @return the edit distance
    */
   public int computeEditDistance(Snippet query, Snippet log, int startIndex, int endIndex) {
     
@@ -778,10 +843,9 @@ public class SearchEngine {
   }
   
   /**
-   * 
-   * @param nhood: a sorted list of locations where an ngram (any ngram) was found in the log
-   * @param qLength: the length of the query 
-   * @return
+   * @param nhood  a sorted list of locations where an ngram (any ngram) was found in the log
+   * @param qLength the length of the query 
+   * @return a map 
    */
   public Map<Integer, Integer> computeWeakDistance(List<Integer> nhood, int nGramLength, int qLength) {
     float minDist = Float.MAX_VALUE;

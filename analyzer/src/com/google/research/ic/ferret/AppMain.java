@@ -32,44 +32,18 @@ import java.util.List;
 
 public class AppMain {
 
-  public static final String ARG_LOGDIR = "--logdir=";
-  public static final String ARG_LOGTYPE = "--logtype=";
-  public static final String ARG_LOGTYPE_ACCESSIBILITY = "accessibility";
-
-  public static final String ARG_LOADDEMOS = "--loaddemos";
-  public static final String ARG_DONTLOAD = "--dontload";
-  public static final String ARG_DONTINDEX = "--dontindex";
-  public static final String ARG_NODEVICESERVER = "--nodeviceserver";
-  public static final String ARG_NOUISERVER = "--nouiserver";
-  
-    /**
-   * For starting the application in "headless" mode
-   * @param args
-   */
+ 
   public static void main(String[] args) {
     
-    List<String> argList = Arrays.asList(args);
-
-    Config.DEBUG = false;
-
-    for (String a : argList) {
-      if (a.startsWith(ARG_LOGTYPE)) {
-        String logType = a.split("=")[1];
-        Debug.log("Setting log type to " + logType);
-        if (logType.equalsIgnoreCase(ARG_LOGTYPE_ACCESSIBILITY)) {
-          Debug.log("logType is accessibility, yep");
-          LogLoader.getLogLoader().setLogType(LogLoader.ACCESSIBILITIY_LOG);
-        } else {
-          throw new IllegalArgumentException("Log type " + logType + " is not supported.");
-        }
-      }
-    }
-
-    if (argList.contains(Config.DEBUGARG)) {
-      Config.DEBUG = true;
+    Config.parseArgs(args);
+    
+    if (Config.logType.equalsIgnoreCase(Config.ARG_LOGTYPE_ACCESSIBILITY)) {
+      LogLoader.getLogLoader().setLogType(LogLoader.ACCESSIBILITIY_LOG);
+    } else {
+      throw new IllegalArgumentException("Log type " + Config.logType + " is not supported.");
     }
     
-    if (!argList.contains(ARG_NODEVICESERVER)) {
+    if (Config.startDeviceServer) {
       Debug.log("Starting device server...");
       DeviceEventReceiver.startServer();
     } else {
@@ -78,7 +52,7 @@ public class AppMain {
 
     Session.getCurrentSession().init();
     
-    if (!argList.contains(ARG_NOUISERVER)) {
+    if (Config.startUIServer) {
       Debug.log("Starting UI server...");
       try {
         UIServer.startServer();
@@ -87,24 +61,16 @@ public class AppMain {
       }
     }
     
-    if(!argList.contains(ARG_DONTLOAD)) {
+    if(Config.loadLogs) {
       Debug.log("Loading logs...");
       AttributeManager.getManager().addHandler(new UserNameAttributeHandler());
       AttributeManager.getManager().addHandler(new DurationAttributeHandler());
 
-      String logDir = null;
-
-      for (String a : argList) {
-        if (a.startsWith(ARG_LOGDIR)) {
-          logDir = a.split("=")[1];
-        }
-      }
-
       long t = System.currentTimeMillis();
-      List<Snippet> snippets = LogLoader.getLogLoader().loadLogs(logDir); // null arg: use default dir
+      List<Snippet> snippets = LogLoader.getLogLoader().loadLogs(Config.logDir); // null arg: use default dir
       Debug.log("Loaded logs in " + (System.currentTimeMillis() - t) + " ms");
 
-      if (!argList.contains(ARG_DONTINDEX)) {
+      if (Config.indexLogs) {
         Debug.log("Indexing logs...");
         t = System.currentTimeMillis();    
         SearchEngine.getSearchEngine().indexLogs(snippets, 4);
@@ -113,7 +79,7 @@ public class AppMain {
     }
     
     
-    if(argList.contains(ARG_LOADDEMOS)) {
+    if(Config.loadDemos) {
       Debug.log("Loading demos...");
       List<Snippet> demoSnippets = LogLoader.getLogLoader().getParser().readDemoDirectory(null);
       DemoManager.getDemoManager().setDemoSnippets(demoSnippets);

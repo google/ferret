@@ -777,7 +777,7 @@ public class AccessibilityLogEvent extends Event
         if (aggressiveFilterEvents[i] == eventType) {
           return true;
         }
-     }      
+      }      
     }
     return false;
   }

@@ -28,7 +28,7 @@ public class Debug {
   public static final String LOG_NAME = "ferret";
   
   public static void log(String m) {
-    if (Config.DEBUG) {
+    if (Config.debug) {
       Logger l = Logger.getLogger(LOG_NAME);
       l.setLevel(Level.INFO);
       l.info(m);

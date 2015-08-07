@@ -115,8 +115,8 @@ public class SubSequence implements Comparable<SubSequence> {
   public String toString() {
     StringWriter sw = new StringWriter();
     sw.append("subS:" + startIndex + "-" + endIndex);
-    sw.append(",dist: " + distance); 
-    sw.append(",source: " + snippet.getSourceFilename());
+    sw.append(String.format(",dist:%.2f",distance)); 
+    sw.append(",source:" + snippet.getSourceFilename());
     return sw.toString();
   }
 }
