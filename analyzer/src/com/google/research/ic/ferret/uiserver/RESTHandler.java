@@ -18,9 +18,9 @@ package com.google.research.ic.ferret.uiserver;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.research.ic.ferret.Config;
 import com.google.research.ic.ferret.Session;
 import com.google.research.ic.ferret.data.DemoManager;
-import com.google.research.ic.ferret.data.Event;
 import com.google.research.ic.ferret.data.FilterSpec;
 import com.google.research.ic.ferret.data.FilteredResultSet;
 import com.google.research.ic.ferret.data.FilteredResultSet.FilteredResultSummary;
@@ -28,6 +28,7 @@ import com.google.research.ic.ferret.data.LogLoader;
 import com.google.research.ic.ferret.data.ResultSet;
 import com.google.research.ic.ferret.data.SearchEngine;
 import com.google.research.ic.ferret.data.Snippet;
+import com.google.research.ic.ferret.data.UberResultSet;
 import com.google.research.ic.ferret.data.attributes.Attribute;
 import com.google.research.ic.ferret.data.attributes.CategoricalAttribute;
 import com.google.research.ic.ferret.data.attributes.DateTimeAttribute;
@@ -35,7 +36,6 @@ import com.google.research.ic.ferret.data.attributes.NumericalAttribute;
 import com.google.research.ic.ferret.test.Debug;
 import com.google.research.ic.ferret.test.Shell;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -141,47 +141,74 @@ public class RESTHandler {
       currentQuery = LogLoader.getLogLoader().getGson().fromJson(querySpec, Snippet.class);
     }
     Debug.log("Received query: " + currentQuery);
-    
+    int resultSize = 0;
     if (currentQuery != null) {
       long t = System.currentTimeMillis();
       Debug.log("Started searching...");
-      ResultSet resultSet = SearchEngine.getSearchEngine().findMatches(currentQuery).getStrongMatches();
+      UberResultSet urs = SearchEngine.getSearchEngine().findMatches(currentQuery);
       Debug.log("Finished searching after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
-      Debug.log("There are " + resultSet.getResults().size() + " subSequences in result set");
+      if (urs.getStrongMatches() != null && urs.getStrongMatches().getResults() != null) {
+        resultSize = urs.getStrongMatches().getResults().size();
+      }
+      Debug.log("There are " + resultSize + " subSequences in strong matches set");
       Debug.log("Query is: ");
-      Shell.printEvents(currentQuery, 0, currentQuery.size());
+      if (Config.debug) Shell.printEvents(currentQuery, 0, currentQuery.size());
       
-      Session.getCurrentSession().setCurrentResultSet(resultSet);
-      
-      FilteredResultSummary[] summaries = new FilteredResultSummary[3];
+      Session.getCurrentSession().setCurrentResultSet(urs);
 
-      int numResults = resultSet.getResults().size();
-      double minDist = resultSet.getResults().get(0).getDistance();
-      double maxDist = resultSet.getResults().get(numResults / 10).getDistance(); // only look at to 10% of results. Yeah, arbitrary
-      double firstQuart = minDist + (maxDist - minDist) / 4;
-      double halfWay = minDist + 2 * (maxDist - minDist) / 4;
       
+      // need to return a uber result set. Just return it?
+      
+      FilteredResultSummary[] summaries = new FilteredResultSummary[4];
+
+      ResultSet strongMatches = urs.getStrongMatches();
       
       t = System.currentTimeMillis();
-      FilteredResultSet bestMatches = resultSet.filter(new FilterSpec(minDist, firstQuart, -1));
-      if (bestMatches.getResults() != null) {
-        Debug.log("found " + bestMatches.getResults().size() + " best matches after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
-        summaries[0]  = bestMatches.getSummary();
-      }
-      
+      FilteredResultSet frs = strongMatches.filter(new FilterSpec(-1.0, -1.0, -1));
+      resultSize = 0;
+      if (frs.getResults() != null) {
+        resultSize = frs.getResults().size();
+        summaries[0] = frs.getSummary();
+        summaries[0].setDisplayName("Strong Matches");
+      } 
+      Debug.log("found " + resultSize + " strong matches after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");        
+
+      ResultSet elongations = urs.getElongatedMatches();
+
       t = System.currentTimeMillis();  
-      FilteredResultSet okMatches = resultSet.filter(new FilterSpec(firstQuart + 0.00001, halfWay, -1));
-      if (okMatches.getResults() != null) {
-        Debug.log("found " + okMatches.getResults().size() + " ok matches after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
-        summaries[1] = okMatches.getSummary();
+      frs = elongations.filter(new FilterSpec(-1.0, -1.0, -1));
+      resultSize = 0;
+      if (frs.getResults() != null) {
+        resultSize = frs.getResults().size();
+        summaries[1] = frs.getSummary();
+        summaries[1].setDisplayName("Elongations");
       }
+      Debug.log("found " + resultSize + " elongated matches after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
+
+      ResultSet altEndMatches = urs.getAltEndingMatches();
 
       t = System.currentTimeMillis();
-      FilteredResultSet farMatches = resultSet.filter(new FilterSpec(halfWay + 0.00001, maxDist, -1));
-      if (farMatches.getResults() != null) {    
-        Debug.log("found " + farMatches.getResults().size() + " far matches after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
-        summaries[2] = farMatches.getSummary();
+      frs = altEndMatches.filter(new FilterSpec(-1.0, -1.0, -1));
+      resultSize = 0;
+      if (frs.getResults() != null) {    
+        resultSize = frs.getResults().size();
+        summaries[2] = frs.getSummary();
+        summaries[2].setDisplayName("Alternate Endings");
       }
+      Debug.log("found " + resultSize + " altEnd matches after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
+      
+      ResultSet weakMatches = urs.getWeakMatches();
+
+      t = System.currentTimeMillis();
+      frs = weakMatches.filter(new FilterSpec(-1.0, -1.0, -1));
+      if (frs.getResults() != null) {    
+        resultSize = frs.getResults().size();
+        summaries[3] = frs.getSummary();
+        summaries[3].setDisplayName("Weak Matches");
+      }
+      Debug.log("found " + resultSize + " weak matches after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
+
+      
       t = System.currentTimeMillis();
       String gsonString = getGson().toJson(summaries);   
       Debug.log("Finished parsing JSON after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
@@ -247,7 +274,7 @@ public class RESTHandler {
       }
     }
 
-    ResultSet currentResults = Session.getCurrentSession().getCurrentResultSet();
+    ResultSet currentResults = Session.getCurrentSession().getCurrentResultSet().getStrongMatches();
     if (currentResults != null) {
       FilteredResultSet filteredResults = currentResults.filter(fSpec);
       String jsonString = getGson().toJson(filteredResults);   

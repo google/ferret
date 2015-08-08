@@ -225,7 +225,8 @@ public class EvalFramework {
         ", nGramDensity=" + Config.nGramDensity +
         ", admittanceThreshhold=" + Config.admittanceThreshold +
         ", elongationFactor=" + Config.elongationFactor +
-        ", fractionToMatch=" + Config.fractionToMatch);
+        ", fractionToMatch=" + Config.fractionToMatch + 
+        ", useAggressiveFiltering=" + Config.useAggressiveFiltering);
     System.out.println("Instance Results: ");
     System.out.println("tag \tstag-inst                    " +
         "\tprec \trec \ttp \tfp \tfn \ttime(ms) \tclose-matches \tweak-matches \telongations \talt-endings");

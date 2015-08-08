@@ -43,8 +43,6 @@ public class FilteredResultSet extends ResultSet {
   private transient ResultSet masterResultSet = null;
   private FilterSpec filterSpec = null;
 
-  
-  
   public FilteredResultSet(Snippet query, 
       ResultSet masterResultSet, 
       FilterSpec filterSpec) {
@@ -58,6 +56,7 @@ public class FilteredResultSet extends ResultSet {
    */ 
   public static final class FilteredResultSummary {
 
+    private String displayName = null;
     private double minDist = -1.0;
     private double maxDist = -1.0;
     private int size = -1;
@@ -76,6 +75,14 @@ public class FilteredResultSet extends ResultSet {
       this.attributes = frSet.attributes;
     }
 
+    public String getDisplayName() {
+      return displayName;
+    }
+    
+    public void setDisplayName(String name) {
+      displayName = name;
+    }
+    
     public double getMinDist() {
       return minDist;
     }
@@ -148,7 +155,8 @@ public class FilteredResultSet extends ResultSet {
       results.add(subS);
       if (minDist == -1.0 || subS.getDistance() < minDist) {
         minDist = subS.getDistance();
-      }      if (subS.getDistance() > maxDist) {
+      }      
+      if (subS.getDistance() > maxDist) {
         maxDist = subS.getDistance();
       }
       if (minSubSequenceSize == -1 || subS.getLength() < minSubSequenceSize) {
@@ -192,10 +200,7 @@ public class FilteredResultSet extends ResultSet {
         return (thus.getStartIndex() - that.getStartIndex());
       }
     });
-    
-    
-    
-    
+
     List<Set<SubSequence>> overlapSets = new ArrayList<Set<SubSequence>>();
 
     Set<SubSequence> overlapSet = new HashSet<SubSequence>();

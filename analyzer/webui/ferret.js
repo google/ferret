@@ -262,7 +262,7 @@ function displaySummaryResults(resultSummaries) {
   var container = $("#results-container-panel");
   container.empty();
 
-  // we get back three result set summaries by default
+  // we get back four result set summaries by default
   for (rsIdx in resultSummaries) {    
 
     colorIdx = 0;
@@ -274,7 +274,7 @@ function displaySummaryResults(resultSummaries) {
         class: "result-summary-label"
       });
   
-      cluster_label.append("Results with distance " + rSummary.minDist + "-" + rSummary.maxDist);
+      cluster_label.append(rSummary.displayName + " (" + rSummary.size + ")");
       container.append(cluster_label);
     
     

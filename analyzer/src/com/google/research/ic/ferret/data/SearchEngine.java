@@ -545,8 +545,13 @@ public class SearchEngine {
         weakMatchResultSequences.add(subS);
       }
     }
-    urs.setStrongMatches(new ResultSet(strongMatchResultSequences, query));
-    urs.setWeakMatches(new ResultSet(weakMatchResultSequences, query));
+    ResultSet strongMatchResultSet = new ResultSet(strongMatchResultSequences, query);
+    strongMatchResultSet.rank();
+    urs.setStrongMatches(strongMatchResultSet);
+    
+    ResultSet weakMatchResultSet = new ResultSet(strongMatchResultSequences, query);
+    weakMatchResultSet.rank();
+    urs.setWeakMatches(weakMatchResultSet);
     
     List<PromotedLocation> elongationPromotions = promColl.elongationFinalCut;
     int elongSize = query.size() * Config.elongationFactor;
@@ -557,7 +562,9 @@ public class SearchEngine {
         elongationResultSequences.add(subS);
       } 
     }
-    urs.setElongatedMatches(new ResultSet(elongationResultSequences, query));
+    ResultSet elongResultSet = new ResultSet(elongationResultSequences, query);
+    elongResultSet.rank();
+    urs.setElongatedMatches(elongResultSet);
 
     List<PromotedLocation> altEndingPromotions = promColl.altEndingFinalCut;
     for (PromotedLocation pl : altEndingPromotions) {
@@ -567,9 +574,10 @@ public class SearchEngine {
         altEndingResultSequences.add(subS);
       } 
     }
-    urs.setAltEndingMatches(new ResultSet(altEndingResultSequences, query));
+    ResultSet altEndResultSet = new ResultSet(altEndingResultSequences, query);
+    altEndResultSet.rank();
+    urs.setAltEndingMatches(altEndResultSet);
     
-    //TODO: PRUNING!!
     return urs;
   }
   

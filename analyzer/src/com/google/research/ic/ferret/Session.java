@@ -20,6 +20,7 @@ import com.google.research.ic.ferret.data.Event;
 import com.google.research.ic.ferret.data.LogLoader;
 import com.google.research.ic.ferret.data.ResultSet;
 import com.google.research.ic.ferret.data.Snippet;
+import com.google.research.ic.ferret.data.UberResultSet;
 import com.google.research.ic.ferret.data.attributes.UserNameAttributeHandler;
 import com.google.research.ic.ferret.test.Debug;
 
@@ -36,7 +37,7 @@ public class Session {
   private List<SessionListener> listeners = new ArrayList<SessionListener>();
   private Snippet currentQuery = null;
   private List<Event> demoEventQueue = null;
-  private ResultSet currentResults = null;  
+  private UberResultSet currentResults = null;  
   private boolean recording = true;
   
   private Object queryLock = new Object();
@@ -123,12 +124,12 @@ public class Session {
     }
   }
   
-  public ResultSet getCurrentResultSet() {
+  public UberResultSet getCurrentResultSet() {
     return currentResults;
   }
   
-  public void setCurrentResultSet(ResultSet rs) {
-    this.currentResults = rs;
+  public void setCurrentResultSet(UberResultSet urs) {
+    this.currentResults = urs;
   }
   
   public static Session getCurrentSession() {
