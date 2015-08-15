@@ -549,7 +549,7 @@ public class SearchEngine {
     strongMatchResultSet.rank();
     urs.setStrongMatches(strongMatchResultSet);
     
-    ResultSet weakMatchResultSet = new ResultSet(strongMatchResultSequences, query);
+    ResultSet weakMatchResultSet = new ResultSet(weakMatchResultSequences, query);
     weakMatchResultSet.rank();
     urs.setWeakMatches(weakMatchResultSet);
     

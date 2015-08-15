@@ -259,6 +259,7 @@ function getFilteredResults(filterParams) {
 function displaySummaryResults(resultSummaries) {
   resetSearchRecordButton("Record");
   console.log(resultSummaries);
+
   var container = $("#results-container-panel");
   container.empty();
 
@@ -277,7 +278,6 @@ function displaySummaryResults(resultSummaries) {
       cluster_label.append(rSummary.displayName + " (" + rSummary.size + ")");
       container.append(cluster_label);
     
-    
       var chart_container = jQuery('<div/>', {
         id: "result-summary-chart-container-" + rsIdx,
         class: "result-summary-chart-container"
@@ -290,12 +290,37 @@ function displaySummaryResults(resultSummaries) {
         constructChartForAttribute(rsIdx, rSummary, attrName, attributeSummaries, chart_container);
         
       }
+    } else {
+   		var msg = "";
+   		if (rsIdx == 0) {
+   		  msg = "No strong matches";
+   		} else if (rsIdx == 1) {
+   		  msg = "No elongations";
+   		} else if (rsIdx == 2) {
+   		  msg = "No alternate endings";
+   		} else if (rsIdx == 3) {
+   		  msg = "No weak matches";
+   		}
+   		
+   		
+   		var cluster_label=jQuery('<div/>', {
+        id: "result-summary-label-" + rsIdx,
+        class: "result-summary-label"
+      });
+  
+      cluster_label.append(msg);
+      container.append(cluster_label);
+
     }
   }
 }
 
+function displayError(errmsg) {
+	alert("Error: " + errmsg);
+}
+
 function constructChartForAttribute(rsIdx, rSummary, attrName, attributeSummaries, chart_container) {
-//Set up the chart and data table
+  //Set up the chart and data table
   var chart_id="result-summary-" + rsIdx + "-chart-" + attrName;
   var chart_div=jQuery('<div/>', {
     id: chart_id ,
@@ -551,6 +576,7 @@ function createEventPanel(container, event) {
 //  .append($(title))
 //  .append($(contents))
   .append($(contents))
+  .append($(extra))
   .attr('title', event.identifier);
   
   var arrow_panel=jQuery('<span/>', {

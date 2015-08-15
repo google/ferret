@@ -77,8 +77,11 @@ public class RESTHandler {
       return "{ \"status\" : \"stopped\" }";
     } else {
 //    List<Event> events = session.dequeueDemoEvents();
-      Snippet q = session.getCurrentQuery();      
-      String response = getGson().toJson(q, Snippet.class); 
+      Snippet q = session.getCurrentQuery();
+      String response = null;
+      synchronized(session) {
+        response = getGson().toJson(q, Snippet.class); 
+      }
       //String response = getGson().toJson(events, ArrayList.class); // Hmmm, not totally safe b/c events is a List, not ArrayList. But I know what it really is...
       //String response2 = "{ \"numPollAttempts\" : \"" + numPollAttempts++ + "\" }";
       if (response != null && !response.equals("null")) {
@@ -141,72 +144,75 @@ public class RESTHandler {
       currentQuery = LogLoader.getLogLoader().getGson().fromJson(querySpec, Snippet.class);
     }
     Debug.log("Received query: " + currentQuery);
-    int resultSize = 0;
-    if (currentQuery != null) {
+    if (currentQuery != null && !currentQuery.equals("")) {
+
       long t = System.currentTimeMillis();
-      Debug.log("Started searching...");
       UberResultSet urs = SearchEngine.getSearchEngine().findMatches(currentQuery);
+      Session.getCurrentSession().setCurrentResultSet(urs);
       Debug.log("Finished searching after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
-      if (urs.getStrongMatches() != null && urs.getStrongMatches().getResults() != null) {
-        resultSize = urs.getStrongMatches().getResults().size();
-      }
-      Debug.log("There are " + resultSize + " subSequences in strong matches set");
+
       Debug.log("Query is: ");
       if (Config.debug) Shell.printEvents(currentQuery, 0, currentQuery.size());
-      
-      Session.getCurrentSession().setCurrentResultSet(urs);
-
-      
-      // need to return a uber result set. Just return it?
-      
+            
       FilteredResultSummary[] summaries = new FilteredResultSummary[4];
 
       ResultSet strongMatches = urs.getStrongMatches();
       
-      t = System.currentTimeMillis();
-      FilteredResultSet frs = strongMatches.filter(new FilterSpec(-1.0, -1.0, -1));
-      resultSize = 0;
-      if (frs.getResults() != null) {
-        resultSize = frs.getResults().size();
-        summaries[0] = frs.getSummary();
-        summaries[0].setDisplayName("Strong Matches");
-      } 
-      Debug.log("found " + resultSize + " strong matches after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");        
-
+      FilteredResultSet frs = null;
+      int resultSize = 0;
+      
+      if (strongMatches != null) {
+        t = System.currentTimeMillis();
+        frs = strongMatches.filter(new FilterSpec(-1.0, -1.0, -1));
+        resultSize = 0;
+        if (frs.getResults() != null) {
+          resultSize = frs.getResults().size();
+          summaries[0] = frs.getSummary();
+          summaries[0].setDisplayName("Strong Matches");
+        } 
+        Debug.log("found " + resultSize + " strong matches after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");        
+      }
+      
       ResultSet elongations = urs.getElongatedMatches();
 
-      t = System.currentTimeMillis();  
-      frs = elongations.filter(new FilterSpec(-1.0, -1.0, -1));
-      resultSize = 0;
-      if (frs.getResults() != null) {
-        resultSize = frs.getResults().size();
-        summaries[1] = frs.getSummary();
-        summaries[1].setDisplayName("Elongations");
+      if (elongations != null) {
+        t = System.currentTimeMillis();  
+        frs = elongations.filter(new FilterSpec(-1.0, -1.0, -1));
+        resultSize = 0;
+        if (frs.getResults() != null) {
+          resultSize = frs.getResults().size();
+          summaries[1] = frs.getSummary();
+          summaries[1].setDisplayName("Elongations");
+        }
+        Debug.log("found " + resultSize + " elongated matches after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
       }
-      Debug.log("found " + resultSize + " elongated matches after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
 
       ResultSet altEndMatches = urs.getAltEndingMatches();
 
-      t = System.currentTimeMillis();
-      frs = altEndMatches.filter(new FilterSpec(-1.0, -1.0, -1));
-      resultSize = 0;
-      if (frs.getResults() != null) {    
-        resultSize = frs.getResults().size();
-        summaries[2] = frs.getSummary();
-        summaries[2].setDisplayName("Alternate Endings");
+      if (altEndMatches != null) {
+        t = System.currentTimeMillis();
+        frs = altEndMatches.filter(new FilterSpec(-1.0, -1.0, -1));
+        resultSize = 0;
+        if (frs.getResults() != null) {    
+          resultSize = frs.getResults().size();
+          summaries[2] = frs.getSummary();
+          summaries[2].setDisplayName("Alternate Endings");
+        }
+        Debug.log("found " + resultSize + " altEnd matches after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
       }
-      Debug.log("found " + resultSize + " altEnd matches after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
-      
+
       ResultSet weakMatches = urs.getWeakMatches();
 
-      t = System.currentTimeMillis();
-      frs = weakMatches.filter(new FilterSpec(-1.0, -1.0, -1));
-      if (frs.getResults() != null) {    
-        resultSize = frs.getResults().size();
-        summaries[3] = frs.getSummary();
-        summaries[3].setDisplayName("Weak Matches");
+      if (weakMatches != null) {
+        t = System.currentTimeMillis();
+        frs = weakMatches.filter(new FilterSpec(-1.0, -1.0, -1));
+        if (frs.getResults() != null) {    
+          resultSize = frs.getResults().size();
+          summaries[3] = frs.getSummary();
+          summaries[3].setDisplayName("Weak Matches");
+        }
+        Debug.log("found " + resultSize + " weak matches after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
       }
-      Debug.log("found " + resultSize + " weak matches after " + ((System.currentTimeMillis() - t)/1000.0) + " secs");
 
       
       t = System.currentTimeMillis();
@@ -215,9 +221,8 @@ public class RESTHandler {
       Debug.log("Gonna return " + gsonString);
       return gsonString;
     } else {
-      return null;
+      return "No results";
     }
-    
   }
   
   @POST

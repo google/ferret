@@ -36,8 +36,8 @@ public class UberResultSet {
     return strongMatches;
   }
   
-  public void setStrongMatches(ResultSet closeMatches) {
-    this.strongMatches = closeMatches;
+  public void setStrongMatches(ResultSet strongMatches) {
+    this.strongMatches = strongMatches;
   }
   
   public ResultSet getWeakMatches() {
@@ -84,11 +84,7 @@ public class UberResultSet {
       altEndingMatches = new ResultSet();
     }
     altEndingMatches.mergeResults(otherURS.getAltEndingMatches());
-    
-    
   }
-  
-  
 }
 
 
