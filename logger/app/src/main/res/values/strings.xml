@@ -1,10 +1,10 @@
 <resources>
-    <string name="app_name">ALogger</string>
+    <string name="app_name">Ferret Logger</string>
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
 
-    <string name="accessibility_service_label">RideAlong UI Event Interceptor Service</string>
-    <string name="accessibility_service_description">Monitors UI events for the RideAlong Mobile UX study client service</string>
+    <string name="accessibility_service_label">Ferret Logging Service</string>
+    <string name="accessibility_service_description">Monitors UI events to be analyzed using the Ferret Analyzer for Mobile User Experience studies.</string>
 
 </resources>

@@ -28,11 +28,11 @@ import java.util.Map;
 public class SearchEngine {
 
   private static SearchEngine theSearchEngine = null;
-  private ArrayList<Snippet> indexedLogs = null;
+  //private List<Snippet> indexedLogs = null;
+  private Map<String, Snippet> indexedLogMap = new HashMap<String, Snippet>();
   
   private HashMap<String, Integer> identifierIds = new HashMap<String, Integer>();
   private ArrayList<Integer> nGramLengthsInUse = new ArrayList<Integer>();
-  
     
   /** inner class definitions */
   private static class LocatedNGram implements Comparable<LocatedNGram> {
@@ -153,7 +153,8 @@ public class SearchEngine {
   /** end inner class definitions */
 
   private SearchEngine() {
-    indexedLogs = new ArrayList<Snippet>();
+    indexedLogMap = new HashMap<String, Snippet>();
+    //indexedLogs = new ArrayList<Snippet>();
   }
   
   public static SearchEngine getSearchEngine() {
@@ -164,14 +165,14 @@ public class SearchEngine {
   }
   
   public void clearIndex() {
-    indexedLogs.clear();
+    indexedLogMap.clear();
     nGramLengthsInUse.clear();
   }
   
   public void indexLogs(List<Snippet> logs, int nGramLength) {
     for (Snippet s : logs) {
       buildNGramIndex(s, nGramLength);
-      indexedLogs.add(s);
+      indexedLogMap.put(s.getId(), s);
     }
     //indexSubSequences(logs, true);
   }
@@ -225,7 +226,7 @@ public class SearchEngine {
 
   
   public UberResultSet findMatches(Snippet query){
-    return findMatches(query, indexedLogs);
+    return findMatches(query, getAllLogs());
   }
 
   public UberResultSet findMatches(Snippet query, final List<Snippet> logs) {
@@ -889,8 +890,12 @@ public class SearchEngine {
       System.out.print("\n");
     }
   }
-    
-  public ArrayList<Snippet> getLogSnippets() {
-    return indexedLogs;
+   
+  public Snippet getLogById(String id) {
+    return indexedLogMap.get(id);
+  }
+  
+  public List<Snippet> getAllLogs() {
+    return new ArrayList(indexedLogMap.values());
   }
 }

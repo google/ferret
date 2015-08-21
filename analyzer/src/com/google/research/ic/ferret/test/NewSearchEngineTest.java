@@ -65,7 +65,7 @@ public class NewSearchEngineTest {
 
   //@Test
   public void testIt() {
-    Debug.log("Loaded logs, there are " + SearchEngine.getSearchEngine().getLogSnippets().size() + " snippets");
+    Debug.log("Loaded logs, there are " + SearchEngine.getSearchEngine().getAllLogs().size() + " snippets");
     printLog();
     printSpace();
     printQuery();
@@ -118,7 +118,7 @@ public class NewSearchEngineTest {
   }
   
   public void printLog() {
-    List<Snippet> snippets =  SearchEngine.getSearchEngine().getLogSnippets();
+    List<Snippet> snippets =  SearchEngine.getSearchEngine().getAllLogs();
     int i = 0;
     for (Snippet s : snippets) {
       for (Event e : s.getEvents()) {

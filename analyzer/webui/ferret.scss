@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-//compile using sass b.scss b.css
+//compile using sass ferret.scss ferret.css
 
-$highlight-color: #d67934;
+//$highlight-color: #d67934;
+$highlight-color: #ff9800;
 $light-grey: rgb(224,224,224);
 $font-stack: Helvecitca, Verdana, sans-serif;
 
@@ -65,11 +66,14 @@ select {
   //overflow-x: auto;
   white-space: nowrap;
   width: 100vw;
+  text-align: center;
 }
 
 #recordAndSearchButton {
   display: inline-block;
   white-space: nowrap;
+  text-align: center;
+  margin: 30% auto auto auto;
 }
 
 #demo-button-panel {
@@ -77,8 +81,8 @@ select {
   white-space: nowrap;
   overflow: auto;
   text-align: center;
-  height: 150px;
-  width: 150px;
+  height: 130px;
+  width: 130px;
   margin: 10px;
 }
 
@@ -142,8 +146,8 @@ select {
   border-radius: 15px;
   text-align: center;
   margin: 5px;
-  height: 150px;
-  width: 150px;
+  height: 120px;
+  width: 120px;
   overflow: auto;
   padding: 0;
 }
@@ -161,20 +165,25 @@ select {
   padding: 0;
 }
 
-.event-title {
-  font-size: medium;
+// for Ferret Logger, this shows the package name
+.event-mainlabel {
+  font-size: small;
   font-weight: bold; 
   text-align: center;
+  margin: 2px;
   font-family: $font-stack;
 }
 
-.event-content {
-  font-size: small;
+// for Ferret Logger, this shows the event type
+.event-sublabel {
+  font-size: x-small;
   font-weight: normal; 
   text-align: center;
+  margin: 2px;
   font-family: $font-stack;
 }
 
+// for Ferret Logger, this shows the event text
 .event-extra {
   font-size: xx-small;
   font-weight: normal; 
@@ -186,6 +195,7 @@ select {
   border-width: 2px;
   border-color: black;
   border-style: solid;
+  margin: 2px;
   display: inline
 }
 

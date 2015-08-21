@@ -108,12 +108,12 @@ public class AccessibilityLogEvent extends Event
   public static final String TYPE_VIEW_LONG_CLICKED_NAME = "LONG CLICKED";
   public static final String TYPE_VIEW_SCROLLED_NAME = "SCROLL";
   public static final String TYPE_VIEW_SELECTED_NAME = "SELECT";
-  public static final String TYPE_VIEW_TEXT_CHANGED_NAME = "TEXT CHANGED";
+  public static final String TYPE_VIEW_TEXT_CHANGED_NAME = "TEXT CHANGE";
   public static final String TYPE_VIEW_TEXT_SELECTION_CHANGED_NAME = "SELECT TEXT";
   public static final String TYPE_VIEW_TEXT_TRAVERSED_AT_MOVEMENT_GRANULARITY_NAME = "TEXT TRAVERSAL";
   public static final String TYPE_WINDOWS_CHANGED_NAME = "SHOW";
   public static final String TYPE_WINDOW_CONTENT_CHANGED_NAME = "UPDATE";
-  public static final String TYPE_WINDOW_STATE_CHANGED_NAME = "NEW SCREEN";
+  public static final String TYPE_WINDOW_STATE_CHANGED_NAME = "POPUP";
 
   private int[] generousFilterEvents = {
     TYPE_ANNOUNCEMENT,
@@ -762,6 +762,7 @@ public class AccessibilityLogEvent extends Event
       sw.append("-" + getwResourceName());
     }
     sw.append("-" + getTimeStamp());
+    sw.append("-" + getIdentifier());
 
     return sw.toString();
   }

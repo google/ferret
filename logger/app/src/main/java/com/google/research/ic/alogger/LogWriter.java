@@ -65,7 +65,7 @@ public class LogWriter {
     public void writeLog(String eventString) {
 
         if (isDemoMode()) {
-            DebugLogger.log("Sending: " + eventString);
+            //DebugLogger.log("Sending: " + eventString);
             Sender.send(eventString);
         } else {
             try {

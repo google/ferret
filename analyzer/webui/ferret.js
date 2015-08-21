@@ -452,7 +452,7 @@ function displayDetailedResults(resultSet) {
     var j = start;
     for ( ; j < end; j++ ) {
       var evt = subSequence.snippet.events[j];
-      var event_panel = createMiniEventPanel(snip_panel, evt);
+      var event_panel = createEventPanel(snip_panel, evt);
       var color = eventIdColorMap[evt.identifier];
       if (color != null) {
         event_panel.css('border-color', color);
@@ -522,16 +522,15 @@ function displayResultSnippet(snippet, snippet_panel){
 function createEventPanel(container, event) {
   var event_id = event.userId + "-" + event.timeStamp + 
     Math.floor((Math.random() * 1000000000) + 1);;
-  var event_title = event.displayTitle;
-  var event_description = "<br/>" + event.displayEvent;
-  var event_extra = "<br/>" + event.displayExtra;  
-  
+  var eventName = event.displayEvent;
+  var eventText = event.displayExtra;  
+  var eventModule = event.displayTitle;
   
   var screenWidth = event.wWidth / event.wRelativeWidth;
   var screenHeight = event.wHeight / event.wRelativeHeight;
   var aspectRatio = screenWidth / screenHeight;
   
-  var canvasHeight = 80;
+  var canvasHeight = 60;
   var canvasWidth = canvasHeight * aspectRatio;
   
   var widgetWidth = canvasWidth * event.wRelativeWidth;
@@ -550,21 +549,26 @@ function createEventPanel(container, event) {
   var ctx = thumbCanvas.get(0).getContext("2d");
   ctx.fillStyle = "#AA4488";
   ctx.fillRect(widgetXPos, widgetYPos, widgetWidth, widgetHeight);
-  
-    
-  var title=jQuery('<div/>', {
-    id: "event-title-" + event_id,
-    html: event_title,
-    class: "event-title"
+      
+  if (eventName == "POPUP") {
+    eventName = "NEW SCREEN";
+  } else if (eventName == "TEXT CHANGE") {
+    eventName = "TEXT CHANGED";
+  }
+      
+  var mainLabel=jQuery('<div/>', {
+    id: "event-mainlabel-" + event_id,
+    html: eventName,
+    class: "event-mainlabel"
   });
-  var contents=jQuery('<div/>', {
-    id: "event-contents-" + event_id,
-    html: event_description,
-    class: "event-content"
+  var subLabel=jQuery('<div/>', {
+    id: "event-sublabel-" + event_id,
+    html: eventText,
+    class: "event-sublabel"
   });
-  var extra=jQuery('<div/>', {
+  var extraLabel=jQuery('<div/>', {
     id: "event-extra-" + event_id,
-    html: event_extra,
+    html: eventModule,
     class: "event-extra"
   });
 
@@ -573,10 +577,8 @@ function createEventPanel(container, event) {
     class: "event-panel"
   })
   .append($(thumbCanvas))
-//  .append($(title))
-//  .append($(contents))
-  .append($(contents))
-  .append($(extra))
+  .append($(mainLabel))
+  .append($(subLabel))
   .attr('title', event.identifier);
   
   var arrow_panel=jQuery('<span/>', {

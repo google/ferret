@@ -23,7 +23,7 @@ select {
   float: right; }
 
 .section-title {
-  background: #d67934;
+  background: #ff9800;
   color: white;
   font-family: Helvecitca, Verdana, sans-serif;
   font-size: x-large;
@@ -51,19 +51,22 @@ select {
 
 #demo-container-panel {
   white-space: nowrap;
-  width: 100vw; }
+  width: 100vw;
+  text-align: center; }
 
 #recordAndSearchButton {
   display: inline-block;
-  white-space: nowrap; }
+  white-space: nowrap;
+  text-align: center;
+  margin: 30% auto auto auto; }
 
 #demo-button-panel {
   display: inline-block;
   white-space: nowrap;
   overflow: auto;
   text-align: center;
-  height: 150px;
-  width: 150px;
+  height: 130px;
+  width: 130px;
   margin: 10px; }
 
 #demo-snippet-panel {
@@ -115,12 +118,12 @@ select {
   display: inline-block;
   border-width: 5px;
   border-style: solid;
-  border-color: #d67934;
+  border-color: #ff9800;
   border-radius: 15px;
   text-align: center;
   margin: 5px;
-  height: 150px;
-  width: 150px;
+  height: 120px;
+  width: 120px;
   overflow: auto;
   padding: 0; }
 
@@ -128,7 +131,7 @@ select {
   display: inline-block;
   border-width: 5px;
   border-style: solid;
-  border-color: #d67934;
+  border-color: #ff9800;
   border-radius: 5px;
   margin: 5px;
   height: 15px;
@@ -136,16 +139,18 @@ select {
   overflow: auto;
   padding: 0; }
 
-.event-title {
-  font-size: medium;
+.event-mainlabel {
+  font-size: small;
   font-weight: bold;
   text-align: center;
+  margin: 2px;
   font-family: Helvecitca, Verdana, sans-serif; }
 
-.event-content {
-  font-size: small;
+.event-sublabel {
+  font-size: x-small;
   font-weight: normal;
   text-align: center;
+  margin: 2px;
   font-family: Helvecitca, Verdana, sans-serif; }
 
 .event-extra {
@@ -158,6 +163,7 @@ select {
   border-width: 2px;
   border-color: black;
   border-style: solid;
+  margin: 2px;
   display: inline; }
 
 .arrow-icon-panel {

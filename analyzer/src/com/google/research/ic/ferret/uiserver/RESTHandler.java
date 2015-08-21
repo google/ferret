@@ -15,6 +15,17 @@
  *******************************************************************************/
 package com.google.research.ic.ferret.uiserver;
 
+import java.util.Date;
+import java.util.List;
+
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -28,6 +39,7 @@ import com.google.research.ic.ferret.data.LogLoader;
 import com.google.research.ic.ferret.data.ResultSet;
 import com.google.research.ic.ferret.data.SearchEngine;
 import com.google.research.ic.ferret.data.Snippet;
+import com.google.research.ic.ferret.data.SubSequence;
 import com.google.research.ic.ferret.data.UberResultSet;
 import com.google.research.ic.ferret.data.attributes.Attribute;
 import com.google.research.ic.ferret.data.attributes.CategoricalAttribute;
@@ -35,17 +47,6 @@ import com.google.research.ic.ferret.data.attributes.DateTimeAttribute;
 import com.google.research.ic.ferret.data.attributes.NumericalAttribute;
 import com.google.research.ic.ferret.test.Debug;
 import com.google.research.ic.ferret.test.Shell;
-
-import java.util.Date;
-import java.util.List;
-
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
 
 @Path("/entry-point")
 public class RESTHandler {
@@ -130,6 +131,19 @@ public class RESTHandler {
     }
   }
 
+  @POST
+  @Path("getSubSequence")
+  @Produces(MediaType.APPLICATION_JSON)
+  public String getSubSequence(@FormParam("logId") String logId,
+      @FormParam("startIndex") int startIndex,
+      @FormParam("endIndex") int endIndex) {
+    
+    Snippet log = SearchEngine.getSearchEngine().getLogById(logId);
+    SubSequence subS = new SubSequence(startIndex, endIndex, log, -1.0); // uh oh, might be overloading SubSequence here
+    String gsonString = getGson().toJson(subS);
+    return gsonString;
+  }
+  
   @POST
   @Path("getSummaryResultsForQuery")
   @Produces(MediaType.APPLICATION_JSON)

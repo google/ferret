@@ -309,7 +309,7 @@ public class Shell {
         long t = System.currentTimeMillis();
         SearchEngine.getSearchEngine().indexLogs(snippets, NGRAM_LENGTH);
         //printNGramTables(snippets);
-        logs = SearchEngine.getSearchEngine().getLogSnippets();
+        logs = SearchEngine.getSearchEngine().getAllLogs();
         response = "Finished indexing " + arg + " after " + (System.currentTimeMillis() - t) + "ms";
       } else {
         response = "Nothing to index in " + arg;
@@ -433,7 +433,7 @@ public class Shell {
   }
 
   private static String listLogs(String response) {
-    logs = SearchEngine.getSearchEngine().getLogSnippets();
+    logs = SearchEngine.getSearchEngine().getAllLogs();
     if (logs != null && logs.size() > 0) {
       int i = 0;
       for (Snippet log : logs) {
@@ -586,7 +586,7 @@ public class Shell {
     if (logName != null) {   
       if (Character.isDigit(logName.charAt(0))) {
         int logIdx = Integer.parseInt(logName);
-        snippets = SearchEngine.getSearchEngine().getLogSnippets();
+        snippets = SearchEngine.getSearchEngine().getAllLogs();
         if (logIdx < snippets.size()) {
           snippet = snippets.get(logIdx);
         } else {

@@ -176,7 +176,7 @@ public class Sender implements Runnable {
               out.println(s.size());
               for (String sample : s) {
                 if (debug) {
-                  System.err.println(sample.toString());
+                  //System.err.println(sample.toString());
                 }
                 out.println(sample.toString());
               }

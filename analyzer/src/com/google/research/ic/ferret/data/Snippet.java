@@ -215,5 +215,14 @@ import java.util.Map;
   public String toString() {
     return "Snippet from file " + getSourceFilename() + ", user=" + getUserName() + ", size=" + size();
   }
+  
+  public String getId() {
+    long ts = -1;
+    if (events.size() > 0) {
+      ts = events.get(0).getTimeStamp();
+    }
+    return userId + "$" + ts + "$" + sourceFilename;
+    
+  }
 }
 
