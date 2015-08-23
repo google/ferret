@@ -202,6 +202,12 @@ function processDemoEvents(events) {
       }
     }
   }
+  if (snippet_panel[0].scrollWidth > snippet_panel.width()) {
+    snippet_panel.scrollLeft(snippet_panel[0].scrollWidth - snippet_panel.width());
+    console.log("scrolling left, scrollWidth = " + snippet_panel.scrollWidth + ", panel width = " + snippet_panel.width);
+  } else {
+    console.log("not scrolling left, scrollWidth = " + snippet_panel[0].scrollWidth + ", panel width = " + snippet_panel.width());
+  }
 }
 
 function searchButtonClicked(eventData) {
@@ -407,6 +413,8 @@ function displayDetailedResults(resultSet) {
   container.empty();
   
   var numResults = resultSet.results.length;
+  
+  //iterate through all of the result snippets
   for (var i = 0; i < numResults; i++) {    
     var subSequence = resultSet.results[i ];
     var snippet = subSequence.snippet;
@@ -415,9 +423,10 @@ function displayDetailedResults(resultSet) {
     var startTime = moment(snippet.events[start].timeStamp);
     var endTime = moment(snippet.events[end - 1].timeStamp);
     
-    var snip_panel=jQuery('<div/>', {
-      id: "result-snippet-" + i,
-      class: "snippet-panel"
+    // create the summary panel that describes this result
+    var dr_summary_panel = jQuery('<div/>', {
+      id: "dr-summary-panel-" + i,
+      class: "dr-summary-panel"
     });
     
     var attrString = "";
@@ -442,17 +451,19 @@ function displayDetailedResults(resultSet) {
     });
     attrString += "distance: " + subSequence.distance + "<br/>";
     attrString += "start time: " + startTime.format('M/D/YY H:mm:ss');
-    var summary_panel = jQuery('<div/>', {
-      class: "snippet-summary"
-    });
 
-    summary_panel.append(attrString);
-    snip_panel.append(summary_panel);
+    dr_summary_panel.append(attrString);
+        
+    // create the snippet panel that shows the matching portion of the result snippet    
+    var dr_matched_snip_panel=jQuery('<div/>', {
+      id: "dr-matched-snip-panel-" + i,
+      class: "dr-snippet-panel"
+    });
     
     var j = start;
     for ( ; j < end; j++ ) {
       var evt = subSequence.snippet.events[j];
-      var event_panel = createEventPanel(snip_panel, evt);
+      var event_panel = createEventPanel(dr_matched_snip_panel, evt);
       var color = eventIdColorMap[evt.identifier];
       if (color != null) {
         event_panel.css('border-color', color);
@@ -460,7 +471,71 @@ function displayDetailedResults(resultSet) {
         event_panel.css('border-color', mdGray);        
       }
     }
-    container.append($(snip_panel));  
+    
+    var dr_matched_snip_label=jQuery('<div/>', {
+      id: "dr-matched-result-label-" + i,
+      class: "dr-snippet-label dr-matching-label"
+    });
+
+    dr_matched_snip_label.append("Matching");
+    
+    var dr_matched_result_container=jQuery('<div/>', {
+      id: "dr-matched-result-container-" + i,
+      class: "dr-snippet-container"
+    });    
+
+    dr_matched_result_container.append($(dr_matched_snip_label));
+    dr_matched_result_container.append($(dr_matched_snip_panel));
+        
+    // now display the events just before the matching region
+    var dr_before_snip_panel=jQuery('<div/>', {
+      id: "dr-before-snip-panel-" + i,
+      class: "dr-snippet-panel"
+    });
+    
+    var j = start - 50;
+    if (j < 0) j = 0;
+    for ( ; j < start; j++ ) {
+      var evt = subSequence.snippet.events[j];
+      var event_panel = createEventPanel(dr_before_snip_panel, evt);
+      var color = eventIdColorMap[evt.identifier];
+      if (color != null) {
+        event_panel.css('border-color', color);
+      } else {
+        event_panel.css('border-color', mdGray);        
+      }
+    }
+    
+    var dr_before_snip_label=jQuery('<div/>', {
+      id: "dr-before-result-label-" + i,
+      class: "dr-snippet-label dr-before-label"
+    });
+    dr_before_snip_label.append("Before");   
+
+    var dr_before_result_container=jQuery('<div/>', {
+      id: "dr-before-result-container-" + i,
+      class: "dr-snippet-container"
+    });    
+    dr_before_result_container.append($(dr_before_snip_label));
+    dr_before_result_container.append($(dr_before_snip_panel));
+        
+    // now create the layout for this detailed result row
+    var dr_result_container=jQuery('<div/>', {
+      id: "dr-result-container" + i,
+      class: "dr-result-container"
+    });
+    
+    dr_result_container.append($(dr_before_result_container));
+    dr_result_container.append($(dr_matched_result_container));
+    
+    var dr_row=jQuery('<div/>', {
+      id: "dr-row-" + i,
+      class: "dr-row"
+    });
+    
+    dr_row.append($(dr_summary_panel));
+    dr_row.append($(dr_result_container));
+    container.append($(dr_row));  
   }
 }
 
@@ -657,7 +732,6 @@ function generateDemo() {
     $("#event-panel-" + i).append($(contents));  
   }
 }
-
 
 //submit a query based on the demo currently loaded in the example pane
 function submitQuery(eventData) {

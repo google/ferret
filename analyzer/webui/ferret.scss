@@ -66,7 +66,7 @@ select {
   //overflow-x: auto;
   white-space: nowrap;
   width: 100vw;
-  text-align: center;
+  //text-align: center;
 }
 
 #recordAndSearchButton {
@@ -117,14 +117,86 @@ select {
   padding: 0;
 }
 
+//
 .snippet-panel {
   display:inline-block;
-  overflow-x: auto;
+  //overflow-x: visible;
   overflow-y: hidden;
   white-space: nowrap;
   border-left: 1px solid $light-grey;
   height: 150px;
-  width: calc(100% - 180px);
+//  width: calc(100% - 150px);
+}
+
+.detailed-result-container {
+  overflow-x: auto;
+  text-align: center;
+  width: calc(100% - 150px);  
+}
+
+.matched-results-panel {
+  background: rgb(190,190,190);
+  height: 190px;
+  //display:inline-block;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+//  width: calc(100% - 150px);
+}
+
+.dr-row {
+  width: 100%;
+}
+
+.dr-summary-panel {
+  display: inline-block;
+  font-size: x-small;
+  font-weight: normal; 
+  text-align: left;
+  font-family: $font-stack;
+  width: 150px;
+  height: 100px;
+  overflow: hidden;
+}
+
+.dr-result-container {
+  width: calc(100% - 150px);
+  display: inline-block;
+  overflow-x: scroll;
+  overflow-y: hidden;  
+  white-space: nowrap;
+}
+
+.dr-snippet-container {
+  display: inline-block;
+  overflow-x: visible;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+
+.dr-snippet-label {
+  display: block;
+  font-family: $font-stack;
+  font-size: normal;
+  font-weight: bold; 
+  text-align: center;
+}
+
+.dr-matching-label {
+  background: #6200ea; // material design: deep-purple-700
+  color: white;
+}
+
+.dr-before-label {
+  background: #999999; // mid-gray
+  color: white;
+}
+
+.dr-snippet-panel {
+  display: block;
+  overflow-x: visible;
+  overflow-y: hidden;
+  white-space: nowrap;
 }
 
 .snippet-summary {

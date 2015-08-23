@@ -51,8 +51,7 @@ select {
 
 #demo-container-panel {
   white-space: nowrap;
-  width: 100vw;
-  text-align: center; }
+  width: 100vw; }
 
 #recordAndSearchButton {
   display: inline-block;
@@ -97,12 +96,69 @@ select {
 
 .snippet-panel {
   display: inline-block;
-  overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
   border-left: 1px solid #e0e0e0;
-  height: 150px;
-  width: calc(100% - 180px); }
+  height: 150px; }
+
+.detailed-result-container {
+  overflow-x: auto;
+  text-align: center;
+  width: calc(100% - 150px); }
+
+.matched-results-panel {
+  background: #bebebe;
+  height: 190px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap; }
+
+.dr-row {
+  width: 100%; }
+
+.dr-summary-panel {
+  display: inline-block;
+  font-size: x-small;
+  font-weight: normal;
+  text-align: left;
+  font-family: Helvecitca, Verdana, sans-serif;
+  width: 150px;
+  height: 100px;
+  overflow: hidden; }
+
+.dr-result-container {
+  width: calc(100% - 150px);
+  display: inline-block;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  white-space: nowrap; }
+
+.dr-snippet-container {
+  display: inline-block;
+  overflow-x: visible;
+  overflow-y: hidden;
+  white-space: nowrap; }
+
+.dr-snippet-label {
+  display: block;
+  font-family: Helvecitca, Verdana, sans-serif;
+  font-size: normal;
+  font-weight: bold;
+  text-align: center; }
+
+.dr-matching-label {
+  background: #6200ea;
+  color: white; }
+
+.dr-before-label {
+  background: #999999;
+  color: white; }
+
+.dr-snippet-panel {
+  display: block;
+  overflow-x: visible;
+  overflow-y: hidden;
+  white-space: nowrap; }
 
 .snippet-summary {
   display: inline-block;
